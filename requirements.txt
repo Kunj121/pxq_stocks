@@ -1,0 +1,16 @@
+# --- core analysis ---
+pandas
+numpy
+scipy
+
+# --- charting ---
+matplotlib
+
+# --- config / env ---
+python-dotenv
+
+# --- notebooks (optional, comment out if unused) ---
+jupyterlab
+
+# --- http, for any non-MCP calls you add later ---
+httpx

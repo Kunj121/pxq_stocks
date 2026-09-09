@@ -1,0 +1,25 @@
+# venv
+.venv/
+venv/
+
+# secrets
+.env
+.env.*
+!.env.example
+
+# python
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+.pytest_cache/
+
+# editors
+.idea/
+.vscode/
+.DS_Store
+
+# data / output
+data/*.csv
+data/*.parquet
+out/*
+!out/.gitkeep
