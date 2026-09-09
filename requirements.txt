@@ -3,6 +3,9 @@ pandas
 numpy
 scipy
 
+# --- parquet (default output format) ---
+pyarrow
+
 # --- charting ---
 matplotlib
 
@@ -14,3 +17,6 @@ jupyterlab
 
 # --- http, for any non-MCP calls you add later ---
 httpx
+
+# --- tests ---
+pytest

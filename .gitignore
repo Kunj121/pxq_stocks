@@ -21,5 +21,9 @@ __pycache__/
 # data / output
 data/*.csv
 data/*.parquet
+data/alpaca_cache/
 out/*
 !out/.gitkeep
+
+# trading records stay local
+execution/logs/*.jsonl
