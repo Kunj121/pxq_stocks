@@ -76,8 +76,24 @@ role Python has in execution.
 |---|---|
 | `PROTOCOL.md` | The exact MCP tool sequence for equity and option orders. Read before every trade. |
 | `guardrails.py` | Local pre-flight check: notional cap, daily order count, live-order kill switch. |
-| `journal.py` | Append-only trade journal at `logs/trades.jsonl`. |
+| `journal.py` | Append-only trade journal at `logs/trades.jsonl` + `logs/trades.csv`. |
 | `logs/` | Journal output. Gitignored — trading records stay local. |
+
+### Journal output
+
+Two files, written together on every order:
+
+| File | Shape |
+|---|---|
+| `logs/trades.jsonl` | Full record — one JSON object per order. `guardrails.py` counts today's orders from this. |
+| `logs/trades.csv` | `date,time,symbol,ticker,side,price,qty,fees,strategy` |
+
+`date`/`time` are **local wall-clock** (the clock the order was placed on), taken from
+the broker's own `created_at` rather than from when the journal happened to run. The
+jsonl `ts` stays UTC. `symbol` and `ticker` carry the same value — the CSV schema asks
+for both columns.
+
+The two files are kept in sync by `journal.py`; do not hand-edit either.
 
 ---
 
@@ -90,13 +106,57 @@ source ../.venv/bin/activate
 python guardrails.py --symbol AAPL --side buy --qty 2 --price 227.50
 
 # record a fill after place_equity_order returns
+# (usually unnecessary — the hook below already did it)
 python journal.py add --symbol AAPL --side buy --qty 2 --price 227.50 \
-    --order-id abc-123 --account-last4 2690
+    --order-id abc-123 --account-last4 2690 --fees 0 --strategy test
+
+# correct a row once the real fill is known
+python journal.py amend --order-id abc-123 --price 227.61 --qty 2 --fees 0 \
+    --state filled
 
 # review
 python journal.py today
 python journal.py summary
 ```
+
+---
+
+## Automatic journaling
+
+Journaling is **not** left to whoever remembers to run it. `.claude/settings.json`
+registers a `PostToolUse` hook on `mcp__robinhood-trading__place_.*_order`:
+
+```
+place_equity_order / place_option_order returns
+        │
+        ▼
+python3 execution/journal.py from-mcp --strategy test
+        │
+        ▼
+logs/trades.jsonl  +  logs/trades.csv
+```
+
+`from-mcp` reads the hook's PostToolUse payload on stdin and shape-matches the order
+object out of the MCP response, so it survives changes to the response's nesting. It
+is deliberately unable to fail loudly — a journaling error must never be mistaken for
+an order error — so it exits 0 on malformed input and ignores non-order tools.
+
+Two things it cannot know at placement time, both of which need a follow-up `amend`:
+
+| Unknown | Why | Fix |
+|---|---|---|
+| Fill price and fees | `average_price` and `fees` are null until the order fills | `journal.py amend --order-id <id> --price <avg> --fees <fees> --state filled` |
+| Share count on a dollar-based order | Robinhood computes shares from the fill; `quantity` is null at placement | same `amend`, plus `--qty <filled>` |
+
+A dollar-based order is journaled with the notional preserved and the row flagged
+`pending-fill`, and the hook's message spells out the exact `amend` command to run.
+
+`--strategy` defaults to `test`. Change the flag in `.claude/settings.json` when the
+orders stop being tests.
+
+Records are keyed by `order_id` and are **idempotent** — if the hook fires and the
+order is then journaled by hand, the second write updates the existing row rather than
+duplicating it.
 
 ---
 
@@ -124,7 +184,9 @@ the local layer; it does **not** disable the MCP tools themselves, which is why 
   file for a single invocation without editing `.env`.
 - **The daily counter reads the journal.** `guardrails.py` counts today's entries in
   `logs/trades.jsonl`, so `MAX_DAILY_ORDERS` only binds if every placed order is
-  actually journaled. Skipping `journal.py add` silently disables that cap.
+  actually journaled. The PostToolUse hook is what makes that reliable; with hooks
+  disabled (`disableAllHooks`, or `--settings` overriding the project file) the cap is
+  only as good as the operator's memory.
 - **Days are UTC**, not market time — a late-evening ET order counts against the next
   UTC day.
 - **`journal.py summary` reports notional flow, not P&L.** It has no cost basis and no

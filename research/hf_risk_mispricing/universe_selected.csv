@@ -1,0 +1,501 @@
+symbol,dollar_volume_2016,median_price_2016,days_2016,name
+A,87374348.38,44.870000000000005,252,Agilent Technologies Inc.
+AAL,321274380.83,38.275000000000006,252,American Airlines Group Inc. Common Stock
+AAP,148371000.25,154.91,252,ADVANCE AUTO PARTS INC
+AAPL,3694932929.2799997,105.75,252,Apple Inc. Common Stock
+ABBV,473333484.28999996,61.215,252,ABBVIE INC.
+ABEV,78762235.5,5.355,252,AMBEV S.A.
+ABT,344218659.78,40.17,252,Abbott Laboratories
+ACAD,63604305.39,29.39,252,ACADIA Pharmaceuticals Inc. Common Stock
+ACN,279257112.67499995,114.97999999999999,252,Accenture PLC
+ADBE,245747463.52499998,97.755,252,Adobe Inc. Common Stock
+ADI,138095559.87,59.17,252,"Analog Devices, Inc. Common Stock"
+ADM,139685315.7,42.175,252,Archer Daniels Midland Company
+ADP,171496103.81,88.515,252,"Automatic Data Processing, Inc. Common Stock"
+ADSK,118635819.205,59.045,252,"Autodesk, Inc. Common Stock"
+AEE,84127077.165,49.075,252,Ameren Corporation
+AEM,102361201.635,45.05,252,Agnico Eagle Mines Ltd.
+AEO,81414419.0,16.305,252,American Eagle Outfitters
+AEP,183549408.37,64.215,252,"American Electric Power Company, Inc. Common Stock"
+AER,84184178.63499999,38.53,252,Aercap Holdings N.V.
+AFL,144353789.08999997,69.435,252,Aflac Inc.
+AGNC,62673706.010000005,18.985,252,AGNC Investment Corp. Common Stock
+AIG,391527558.08,56.805,252,"American International Group, Inc."
+AKAM,107572959.575,54.35,252,"Akamai Technologies, Inc. Common Stock"
+ALB,87894430.57,80.045,252,Albemarle Corporation
+ALK,98853804.30000001,69.79,252,"Alaska Air Group, Inc."
+ALL,145436140.68,67.66,252,The Allstate Corporation
+ALLY,71880044.12,18.095,252,Ally Financial Inc.
+AMAT,302542223.19,24.43,252,"Applied Materials, Inc. Common Stock"
+AMD,136303969.96,5.109999999999999,252,"Advanced Micro Devices, Inc. Common Stock"
+AME,75681240.29499999,47.55,252,"Ametek, Inc."
+AMG,82950135.82499999,145.34,252,Affiliated Managers Group
+AMGN,517453826.96,154.17000000000002,252,Amgen Inc. Common Stock
+AMP,116562044.965,96.655,252,"Ameriprise Financial, Inc."
+AMT,221944784.385,106.435,252,American Tower Corporation
+AMTD,88977950.94,31.310000000000002,252,"AMTD IDEA Group American Depositary Shares, each representing six (6) Class A Ordinary Shares"
+AMZN,2630776220.365,727.875,252,"Amazon.com, Inc. Common Stock"
+AON,113482068.08,108.675,252,Aon plc Class A
+APA,215334514.8,54.635000000000005,252,APA Corporation Common Stock
+APC,290403941.21000004,53.575,252,ARKO Petroleum Corp. Class A Common Stock
+APD,180376327.525,143.275,252,"Air Products & Chemicals, Inc."
+APH,81101770.80000001,58.755,252,Amphenol Corporation
+AR,80712171.52000001,26.119999999999997,252,ANTERO RESOURCES CORPORATION
+ASML,67955354.43,100.56,252,ASML Holding N.V. New York Registry Shares
+AVGO,437840610.96000004,159.575,252,Broadcom Inc. Common Stock
+AWK,89157655.23500001,72.64,252,"American Water Works Company, Inc"
+AXP,300594584.53999996,64.055,252,American Express Company
+AYI,97781968.58500001,248.59,252,Acuity Inc.
+AZN,143615063.71,29.665,252,AstraZeneca PLC
+AZO,222659735.88,769.365,252,"AutoZone, Inc."
+B,291009990.105,16.57,252,Barrick Mining Corporation
+BA,558315438.355,131.95,252,Boeing Company
+BABA,1034912492.13,80.675,252,"Alibaba Group Holding Limited American Depositary Shares, each represents eight Ordinary Shares"
+BAC,1454133565.315,14.695,252,Bank of America Corporation
+BALL,102618623.75999999,72.295,252,Ball Corporation
+BAX,192167460.435,44.754999999999995,252,Baxter International Inc.
+BBD,93034350.5,7.960000000000001,252,Banco Bradesco S.A. American Depositary Shares (Each representing one Preferred Shares)
+BBY,166019939.565,32.86,252,"Best Buy Company, Inc."
+BDX,159352552.69,167.17000000000002,252,"Becton, Dickinson and Co."
+BEN,122279017.315,35.815,252,"Franklin Templeton, Inc."
+BFH,158031181.91,212.555,252,"Bread Financial Holdings, Inc."
+BG,75000946.56,61.37,252,Bunge Global SA
+BHC,542663371.19,26.895000000000003,252,Bausch Health Companies Inc
+BHP,120037893.305,29.509999999999998,252,BHP Group Limited American Depositary Shares (Each representing two Ordinary Shares)
+BIDU,452602989.5,170.98,252,"Baidu, Inc. ADS"
+BIIB,476658298.87,280.375,252,Biogen Inc. Common Stock
+BKNG,674875856.24,1344.8000000000002,252,Booking Holdings Inc. Common Stock
+BLK,235484575.665,356.17999999999995,252,"Blackrock, Inc."
+BMRN,128126975.85,85.645,252,BioMarin Pharmaceutical Inc. Common Stock
+BMY,501501179.0,62.695,252,Bristol-Myers Squibb Co.
+BNY,239913676.575,40.0,252,Bank of New York Mellon Corporation
+BP,236275069.76999998,33.35,252,BP p.l.c.
+BRK.B,527075251.36,143.93,252,BERKSHIRE HATHAWAY Class B
+BSX,184585040.60999998,21.950000000000003,252,Boston Scientific Corp.
+BUD,187844441.63,123.89,252,Anheuser-Busch INBEV SA/NV
+BURL,74392112.09,66.82,252,"BURLINGTON STORES, INC."
+BWA,77819910.83,34.44,252,BorgWarner Inc.
+BX,115537140.67,26.35,252,Blackstone Inc.
+BXP,102602719.375,127.15,252,"BXP, Inc."
+C,969168264.905,45.675,252,Citigroup Inc.
+CAG,126221389.95,44.88,252,"Conagra Brands, Inc."
+CAH,178521951.73000002,78.9,252,"Cardinal Health, Inc."
+CAR,69818384.36,32.25,252,"Avis Budget Group, Inc. Common Stock"
+CAT,394500548.475,78.87,252,Caterpillar Inc.
+CB,207148932.685,125.24000000000001,252,Chubb Limited
+CBRE,77614216.38,28.645,252,"CBRE GROUP, INC."
+CCEP,95991182.11,39.26,252,Coca-Cola Europacific Partners plc Ordinary Shares
+CCI,208482324.765,88.375,252,Crown Castle Inc.
+CCL,221275450.09500003,48.265,252,Carnival Corporation Ltd.
+CF,137305435.945,28.384999999999998,252,"CF Industries Holding, Inc."
+CFG,138109459.57,23.244999999999997,252,"Citizens Financial Group, Inc."
+CHD,77791987.07,91.14,252,"Church & Dwight Co., Inc."
+CHKP,111997678.75,81.875,252,Check Point Software Technologies Ltd. Ordinary Shares
+CHRW,104517914.13,71.51,252,"C.H. Robinson Worldwide, Inc. Common Stock"
+CHTR,424029608.06,232.14999999999998,252,"Charter Communications, Inc. Class A Common Stock New"
+CI,183728603.365,132.44,252,The Cigna Group
+CL,235693145.975,70.93,252,Colgate-Palmolive Company
+CLX,135950407.85999998,127.205,252,Clorox Company
+CMCSA,628510200.04,63.16,252,Comcast Corporation Class A Common Stock
+CME,155315035.745,98.065,252,CME Group Inc. Class A Common Stock
+CMG,473672955.63,419.78,252,"Chipotle Mexican Grill, Inc."
+CMI,202780993.10000002,116.875,252,Cummins Inc.
+CMS,93434977.72999999,41.525000000000006,252,CMS Energy Corporation
+CNC,114153251.24000001,61.96,252,Centene Corporation
+CNI,63302936.83,62.29,252,Canadian National Railway
+CNP,89720785.02,22.545,252,"CenterPoint Energy, Inc."
+CNQ,88804382.16499999,30.025,252,Canadian Natural Resources Limited
+CNX,78939096.375,15.935,252,CNX Resources Corporation
+COF,243056373.69,70.125,252,Capital One Financial
+COO,66575245.175,167.11,252,"The Cooper Companies, Inc. Common Stock"
+COP,393088056.1,42.82,252,ConocoPhillips
+COR,199588381.75,84.42,252,"Cencora, Inc."
+COST,361598382.52,152.235,252,Costco Wholesale Corporation Common Stock
+CP,115299030.99,142.735,252,Canadian Pacific Kansas City Limited
+CPAY,112331246.895,149.82999999999998,252,"Corpay, Inc."
+CPB,113845761.425,60.724999999999994,252,The Campbell's Company Common Stock
+CPRI,141566644.765,49.61,252,Capri Holdings Limited
+CRM,355743706.69500005,74.59,252,"Salesforce, Inc."
+CSCO,703222321.3499999,29.134999999999998,252,"Cisco Systems, Inc. Common Stock (DE)"
+CSX,215364350.56,27.205,252,CSX Corporation Common Stock
+CTAS,66172524.474999994,97.495,252,Cintas Corporation Common Stock
+CTSH,261892000.63,57.67,252,Cognizant Technology Solutions Corporation Class A Common Stock
+CVS,506362559.25,95.435,252,CVS HEALTH CORPORATION
+CVX,794595646.49,101.32,252,Chevron Corporation
+CX,77179968.495,7.235,252,Cemex S.A.B. de C.V.
+D,203374925.15499997,73.285,252,"Dominion Energy, Inc Common Stock"
+DAL,443425131.25,42.935,252,"Delta Air Lines, Inc."
+DB,75513484.96000001,16.175,252,Deutsche Bank Aktiengesellschaft
+DD,357138324.20000005,52.54,252,"DuPont de Nemours, Inc. Common Stock"
+DE,245158855.555,82.89,252,Deere & Company
+DEO,66578828.305,108.215,252,Diageo plc
+DG,230898496.35,77.235,252,Dollar General Corp.
+DGX,86651029.47999999,80.43,252,Quest Diagnostics Inc.
+DHI,119811721.85,29.8,252,D.R. Horton Inc.
+DHR,256253214.03,82.715,252,Danaher Corporation
+DINO,99466351.25,27.755,252,HF Sinclair Corporation
+DIS,743568482.885,97.66,252,The Walt Disney Company
+DKS,87128623.45,47.39,252,"Dick's Sporting Goods, Inc."
+DLTR,188698107.31,81.185,252,Dollar Tree Inc. Common Stock
+DOC,130946269.19999999,34.620000000000005,252,"Healthpeak Properties, Inc."
+DOV,96177929.69999999,67.78999999999999,252,Dover Corporation
+DPZ,91146097.755,136.13,252,Domino's Pizza Inc Common Stock
+DRI,115806489.75999999,63.305,252,"Darden Restaurants, Inc."
+DTE,98933382.22,92.38,252,DTE Energy Company
+DUK,269802615.795,78.815,252,Duke Energy Corporation
+DVA,95356142.47,67.43,252,DaVita Inc.
+DVN,278714685.14500004,37.325,252,Devon Energy Corporation
+EBAY,277037455.76,26.11,252,eBay Inc. Common Stock
+ECL,126810028.35,116.775,252,"Ecolab, Inc."
+ED,145351209.255,73.89,252,"Consolidated Edison, Inc."
+EFX,85409035.62,121.995,252,"Equifax, Incorporated"
+EIX,128089667.155,71.38499999999999,252,Edison International
+EL,145045310.735,90.94999999999999,252,The Estee Lauder Companies Inc. Class A
+ELV,227642614.185,132.345,252,"Elevance Health, Inc."
+EMN,90123689.44999999,70.36500000000001,252,Eastman Chemical Company
+EMR,205903337.14499998,52.84,252,Emerson Electric Co.
+EOG,303069447.41999996,82.76,252,"EOG Resources, Inc."
+EPD,133535140.42500001,26.33,252,Enterprise Products Partners L.P.
+EQIX,227621782.695,349.905,252,"Equinix, Inc. Common Stock REIT"
+EQT,117283881.82499999,69.19,252,EQT CORP
+ES,95626261.75999999,55.275000000000006,252,Eversource Energy
+ET,144858600.37,14.335,252,Energy Transfer LP Common Units representing limited partner interests
+ETN,165393018.92999998,62.864999999999995,252,"Eaton Corporation, plc Ordinary Shares"
+ETR,106343174.005,75.78999999999999,252,Entergy Corporation
+EW,163851853.2,99.76,252,Edwards Lifesciences Corp
+EXC,202661063.11499998,34.25,252,Exelon Corporation Common Stock
+EXE,214773944.695,5.055,252,Expand Energy Corporation Common Stock
+EXPD,68190891.95,49.61,252,"Expeditors International of Washington, Inc."
+EXPE,245403905.86,111.985,252,"Expedia Group, Inc. Common Stock"
+EXR,88354323.32499999,84.95,252,"Extra Space Storage, Inc."
+F,428498096.47,12.535,252,Ford Motor Company
+FANG,103119863.235,89.36500000000001,252,"Diamondback Energy, Inc. Common Stock"
+FAST,120455356.675,44.36,252,Fastenal Company Common Stock
+FBIN,72850283.63,56.17,252,"Fortune Brands Innovations, Inc."
+FCX,401785509.875,10.86,252,Freeport-McMoran Inc.
+FDX,260603964.67000002,163.685,252,FedEx Corporation
+FE,140297730.49,33.16,252,FirstEnergy Corp.
+FFIV,90740434.65,117.175,252,"F5, Inc. Common Stock"
+FIS,133534912.07,74.75,252,"Fidelity National Information Services, Inc."
+FISV,111629106.99000001,101.54,252,"Fiserv, Inc. Common Stock"
+FITB,147573677.04,18.655,252,Fifth Third Bancorp
+FLG,65182110.54,15.12,252,"Flagstar Bank, National Association"
+FLR,70056954.17,51.519999999999996,252,Fluor Corporation
+FOX,88903914.52000001,27.375,252,Fox Corporation Class B Common Stock
+FOXA,271644039.56,27.2925,252,Fox Corporation Class A Common Stock
+FSLR,115403747.49,48.05500000000001,252,"First Solar, Inc. Common Stock"
+FTI,102350441.41499999,27.585,252,TechnipFMC plc Ordinary Share
+GAP,150917524.14499998,24.045,252,"The Gap, Inc."
+GD,224365534.39,143.22,252,General Dynamics Corporation
+GE,1075162083.43,30.5,252,GE Aerospace
+GEN,186736552.685,20.494999999999997,252,Gen Digital Inc. Common Stock
+GILD,869794880.16,82.995,252,"Gilead Sciences, Inc. Common Stock"
+GIS,203170263.87,62.47,252,"General Mills, Inc."
+GLW,196738436.97000003,21.045,252,Corning Incorporated
+GM,413180348.23,31.265,252,General Motors Company
+GME,66587987.735,28.13,252,GameStop Corp. Class A
+GOOG,1260054264.805,742.845,252,Alphabet Inc. Class C Capital Stock
+GOOGL,1383729376.02,761.75,252,Alphabet Inc. Class A Common Stock
+GPC,71217936.135,97.005,252,Genuine Parts Company
+GPN,96242038.75999999,72.72,252,"Global Payments, Inc."
+GPOR,67961203.81,27.915,252,Gulfport Energy Corporation
+GPRO,73223345.07499999,11.895,252,"GoPro, Inc. Class A Common Stock"
+GS,576360125.4449999,161.32999999999998,252,Goldman Sachs Group Inc.
+GSK,138489628.76999998,41.54,252,GSK plc American Depositary Shares (Each representing two Ordinary Shares)
+GT,98014608.375,29.59,252,The Goodyear Tire & Rubber Company Common Stock
+GWW,129126656.34,224.13,252,"W.W. Grainger, Inc."
+HAL,399712246.56,42.93,252,Halliburton Company
+HAS,85953640.77,81.135,252,"Hasbro, Inc. Common Stock"
+HBAN,124664910.45,9.785,252,Huntington Bancshares Incorporated Common Stock
+HCA,217644268.57,75.80000000000001,252,"HCA Healthcare, Inc."
+HD,635129973.4549999,130.055,252,"Home Depot, Inc."
+HIG,115279327.03,43.76,252,"The Hartford Insurance Group, Inc."
+HLF,70852218.65,59.525000000000006,252,Herbalife Ltd.
+HLT,166308748.935,22.54,252,Hilton Worldwide Holdings Inc.
+HOG,109809588.13499999,49.365,252,"Harley-Davidson, Inc."
+HON,353072947.39,113.84,252,Honeywell International Inc. Common Stock
+HP,117978843.32499999,62.575,252,"Helmerich & Payne, Inc."
+HPE,197812660.31,19.345,252,Hewlett Packard Enterprise Company
+HPQ,171484746.48,13.52,252,HP Inc.
+HRB,73316881.8,23.494999999999997,252,"H&R Block, Inc."
+HRL,108071771.775,37.805,252,Hormel Foods Corporation
+HSBC,89288512.985,33.705,252,HSBC Holdings PLC
+HSIC,85947097.18,164.42,252,"Henry Schein, Inc. Common Stock"
+HST,157095114.25,16.055,252,"Host Hotels & Resorts, Inc. Common Stock"
+HSY,118384090.63999999,95.515,252,The Hershey Company
+HUM,191817623.255,176.78,252,Humana Inc.
+IBM,606447098.5150001,152.565,252,International Business Machines Corporation
+IBN,73169386.05,7.34,252,ICICI Bank Limited
+ICE,181118121.63,254.095,252,Intercontinental Exchange  Inc.
+IFF,66540545.995000005,124.345,252,International Flavors & Fragrances Inc.
+ILMN,176851019.15,148.695,252,"Illumina, Inc. Common Stock"
+INCY,112940392.79499999,81.58500000000001,252,Incyte Corp. Common Stock
+INFY,68587043.08500001,16.605,252,Infosys Limited American Depositary Shares
+INTC,761138654.185,33.14,252,Intel Corporation Common Stock
+INTU,152912418.975,107.44,252,Intuit Inc. Common Stock
+IONS,68056826.0,35.47,252,"Ionis Pharmaceuticals, Inc. Common Stock"
+IP,138083221.9,43.515,252,International Paper Co.
+IQV,77202991.425,70.175,252,IQVIA Holdings Inc.
+IR,125874050.355,65.625,252,Ingersoll Rand Inc. Common Stock
+ISRG,199441346.24,638.87,252,"Intuitive Surgical, Inc. Common Stock"
+ITUB,137114781.64,9.445,252,Itau Unibanco Holding S.A. American Depositary Shares
+ITW,171249964.125,108.225,252,Illinois Tool Works Inc.
+JAZZ,83063212.43,126.96000000000001,252,Jazz Pharmaceuticals plc Common Stock (Ireland)
+JBHT,71687006.5,81.56,252,"J.B. Hunt Transport Services, Inc. Common Stock"
+JBLU,119224709.42500001,18.73,252,JetBlue Airways Corporation Common Stock
+JCI,215320866.59,43.57,252,Johnson Controls International plc
+JD,270698533.98,25.71,252,"JD.com, Inc. American Depositary Shares"
+JNJ,888437998.1800001,114.93,252,Johnson & Johnson
+JPM,1091764361.375,64.04,252,JPMorgan Chase & Co.
+KDP,122668230.13,91.27000000000001,252,Keurig Dr Pepper Inc. Common Stock
+KEY,182713053.465,12.145,252,KeyCorp
+KHC,256581308.73000002,84.75999999999999,252,The Kraft Heinz Company Common Stock
+KIM,83204607.375,28.115000000000002,252,Kimco Realty Corp.
+KLAC,95831569.09,71.955,252,KLA Corporation Common Stock
+KMB,228061322.695,128.035,252,Kimberly-Clark Corporation Common Stock
+KMI,337362373.49,18.895,252,"Kinder Morgan, Inc."
+KMX,130443040.23,52.150000000000006,252,CarMax Inc.
+KO,579204110.7650001,43.620000000000005,252,Coca-Cola Company
+KR,316000264.515,35.315,252,The Kroger Co.
+KSS,146053496.67,44.224999999999994,252,Kohls Corporation
+LB,166037593.07999998,72.92,252,LandBridge Company LLC
+LBTYA,90723975.81,33.010000000000005,252,Liberty Global Ltd. Class A Common Shares
+LBTYK,110700281.385,32.0,252,Liberty Global Ltd. Class C Common Shares
+LEA,89671378.155,114.38499999999999,252,Lear Corporation
+LEN,105684425.59,44.755,252,Lennar Corporation Class A
+LH,102328721.69999999,127.005,252,Labcorp Holdings Inc.
+LHX,76261034.3,85.45,252,"L3Harris Technologies, Inc."
+LKQ,62690263.155,32.575,252,LKQ Corporation Common Stock
+LLY,335802717.71999997,76.33,252,Eli Lilly & Co.
+LMT,340683274.08,239.51,252,Lockheed Martin Corp.
+LNC,102137144.215,44.335,252,Lincoln National Corp.
+LNG,101701112.4,37.575,252,Cheniere Energy Inc
+LOW,405335901.36,74.58000000000001,252,Lowe's Companies Inc.
+LRCX,217201729.0,84.47,252,Lam Research Corporation Common Stock
+LULU,123541275.325,64.03,252,lululemon athletica inc. Common Stock
+LUMN,149742449.06,27.869999999999997,252,"Lumen Technologies, Inc."
+LUV,273523742.15999997,41.67,252,Southwest Airlines Co.
+LVS,221305531.40499997,50.675,252,Las Vegas Sands Corp.
+LYB,275031606.16999996,80.17500000000001,252,LyondellBasell Industries N.V. Class A
+M,219142855.805,37.665,252,Macy's Inc.
+MA,397165191.10499996,96.135,252,Mastercard Incorporated
+MAA,65464377.56,95.515,252,"Mid-America Apartment Communities, Inc."
+MAC,77513485.58000001,78.64,252,The Macerich Company
+MAR,235509671.595,68.425,252,Marriott International Class A Common Stock
+MAS,121375951.655,31.72,252,Masco Corporation
+MAT,116383085.11,31.735,252,"Mattel, Inc. Common Stock"
+MBLY,109960805.08000001,37.93,252,Mobileye Global Inc. Class A Common Stock
+MCD,659401054.595,119.495,252,McDonald's Corporation
+MCHP,112528426.08000001,52.3,252,Microchip Technology Incorporated Common Stock
+MCK,273799328.705,166.26,252,McKesson Corporation
+MCO,106646258.99000001,98.25,252,Moody's Corporation
+MDLZ,366244754.86,43.025000000000006,252,"Mondelez International, Inc. Class A Common Stock"
+MDT,429628725.45500004,80.85,252,Medtronic plc
+MET,308268736.26,43.78,252,"MetLife, Inc."
+META,2530130596.1,117.765,252,"Meta Platforms, Inc. Class A Common Stock"
+MGM,148440007.83,23.605,252,MGM RESORTS INTERNATIONAL
+MHK,106484471.455,196.025,252,"Mohawk Industries, Inc."
+MKC,69912578.52,95.42,252,"McCormick & Company, Incorporated Non-VTG CS"
+MLM,125602068.08500001,182.375,252,Martin Marietta Materials
+MMM,359416307.77,169.92000000000002,252,3M Company
+MNST,154177671.69,144.92000000000002,252,Monster Beverage Corporation
+MO,407912042.12,63.675,252,"Altria Group, Inc."
+MOS,145192349.9,26.74,252,The Mosaic Company
+MPC,244372026.93,40.545,252,MARATHON PETROLEUM CORPORATION
+MRK,573484039.53,57.760000000000005,252,"Merck & Co., Inc."
+MRSH,135585725.325,65.805,252,Marsh
+MS,411399272.95500004,27.89,252,Morgan Stanley
+MSFT,1629459139.0949998,55.105000000000004,252,Microsoft Corporation Common Stock
+MSI,89973972.975,73.495,252,"Motorola Solutions, Inc. New"
+MT,84199789.7,5.5600000000000005,252,ArcelorMittal
+MTB,107981413.305,116.235,252,M&T Bank Corp.
+MTD,70930383.38,377.815,252,Mettler-Toledo International
+MU,369523775.7,13.2,252,"Micron Technology, Inc. Common Stock"
+MUR,99609929.805,28.845,252,Murphy Oil Corp.
+NBR,75163778.065,9.754999999999999,252,Nabors Industries Ltd.
+NCLH,86915835.0,42.945,252,Norwegian Cruise Line Holdings Ltd. Ordinary Shares
+NDAQ,63187507.44499999,65.185,252,"Nasdaq, Inc. Common Stock"
+NEE,267563721.09,119.24000000000001,252,"NextEra Energy, Inc."
+NEM,279370189.68500006,33.84,252,Newmont Corporation
+NFLX,1056413024.51,97.92,252,"Netflix, Inc. Common Stock"
+NI,64820134.545,23.085,252,NiSource Inc.
+NKE,526191886.95,56.28,252,"Nike, Inc."
+NLY,87228522.28999999,10.385000000000002,252,Annaly Capital Management. Inc.
+NOC,212607513.375,214.45999999999998,252,Northrop Grumman Corp.
+NOK,65617971.92,5.69,252,Nokia Corporation
+NOV,156890486.57999998,33.04,252,NOV Inc.
+NOW,118804745.025,73.515,252,"SERVICENOW, INC."
+NRG,73320394.625,12.405000000000001,252,"NRG Energy, Inc."
+NSC,146430845.235,88.845,252,Norfolk Southern Corp.
+NTAP,92897131.8,26.365000000000002,252,"NetApp, Inc. Common Stock"
+NTES,195103381.51000002,185.625,252,"NetEase, Inc. American Depositary Shares"
+NUE,136239911.95499998,48.754999999999995,252,Nucor Corporation
+NVDA,474897609.6,47.605000000000004,252,NVIDIA Corporation Common Stock
+NVO,85285898.055,52.0,252,Novo-Nordisk A/S
+NVS,157707023.445,76.505,252,Novartis AG
+NWL,205870114.44,47.565,252,Newell Brands Inc. Common Stock
+NXPI,289545700.84000003,85.315,252,NXP Semiconductors N.V. Common Stock
+O,111265643.235,61.58,252,Realty Income Corporation
+OKE,102611761.68,45.67,252,"Oneok, Inc."
+OMC,133532460.08,82.95,252,Omnicom Group Inc.
+ORCL,513094996.22,39.51,252,Oracle Corp
+ORLY,211505177.35999998,271.64,252,"O'Reilly Automotive, Inc. Common Stock"
+OVV,106627313.02000001,8.0,252,Ovintiv Inc.
+OXY,341277778.005,72.555,252,Occidental Petroleum Corporation
+PAA,70239497.0,27.175,252,"Plains All American Pipeline, L.P. Common Units representing Limited Partner Interests"
+PANW,219639336.02,141.64999999999998,252,"Palo Alto Networks, Inc. Common Stock"
+PAYX,117804491.75,55.205,252,"Paychex, Inc. Common Stock"
+PBR,198591904.065,7.525,252,PETROLEO BRASILEIRO S.A.-PETROBRAS ADS (REP 1 COMMON SHARE)
+PBR.A,66641967.515,5.84,252,Petroleo Brasileiro S.A.-Petrobras
+PCAR,122782036.585,55.825,252,PACCAR Inc. Common Stock
+PCG,166883465.6,59.535,252,PG&E Corporation
+PEG,136239500.54500002,43.71,252,Public Service Enterprise Group Incorporated
+PEP,486792443.745,103.8,252,"PepsiCo, Inc. Common Stock"
+PFE,979695361.895,32.835,252,Pfizer Inc.
+PFG,75751623.75999999,44.09,252,Principal Financial Group Inc Common Stock
+PG,779318117.7750001,83.205,252,Procter & Gamble Company
+PGR,107736093.725,32.77,252,Progressive Corporation
+PH,127084185.49,113.8,252,Parker-Hannifin Corporation
+PHM,99719622.495,18.715,252,"Pultegroup, Inc."
+PII,93109121.63,85.25,252,Polaris Inc.
+PKG,68693548.74000001,69.69,252,Packaging Corp of America
+PLD,144815610.12,49.345,252,"PROLOGIS, INC."
+PM,455775062.425,97.745,252,Philip Morris International Inc.
+PNC,241229851.165,86.66,252,PNC Financial Services Group
+PNR,78346889.47,58.29,252,Pentair plc
+PPG,161723514.78,103.0,252,"PPG Industries, Inc."
+PPL,168230102.97,35.945,252,PPL Corporation
+PRGO,188577916.385,93.78,252,PERRIGO COMPANY PLC
+PRU,210814655.32,76.58500000000001,252,"Prudential Financial, Inc."
+PSA,208668521.04500002,241.565,252,Public Storage
+PSX,236949890.49,79.795,252,PHILLIPS 66
+PTEN,72747979.47,19.509999999999998,252,"Patterson-UTI Energy, Inc. Common Stock"
+PVH,96361267.35,96.82499999999999,252,PVH Corp.
+PYPL,307703332.455,38.79,252,"PayPal Holdings, Inc. Common Stock"
+Q,77202991.425,70.175,252,"Qnity Electronics, Inc."
+QCOM,538947160.33,54.905,252,QUALCOMM Incorporated Common Stock
+QRVO,77491926.95,53.55500000000001,252,"Qorvo, Inc. Common Stock"
+RCL,176485908.04000002,74.99000000000001,252,Royal Caribbean Group
+REGN,339427969.1,392.57500000000005,252,"Regeneron Pharmaceuticals, Inc. Common Stock"
+RF,180186422.92,9.35,252,Regions Financial Corp.
+RH,68824265.825,34.19,252,RH
+RIG,152019081.09,10.27,252,Transocean LTD.
+RIO,132428803.305,31.125,252,Rio Tinto plc
+RL,95707715.485,97.61500000000001,252,Ralph Lauren Corporation
+ROK,105588686.705,115.92500000000001,252,"Rockwell Automation, Inc."
+ROP,89196206.045,175.56,252,"Roper Technologies, Inc. Common Stock"
+ROST,162615963.19,58.19,252,"Ross Stores, Inc. Common Stock"
+RRC,154498050.725,38.025,252,Range Resources Corp
+RSG,74066396.20500001,49.79,252,Republic Services Inc.
+RTX,416559901.9,101.63,252,RTX Corporation
+RY,64400554.995,61.0,252,Royal Bank of Canada
+SABR,69607100.935,27.275,252,Sabre Corporation Common Stock
+SAP,73753423.69,80.83,252,SAP SE
+SBAC,103955118.745,102.405,252,SBA Communications Corporation Class A Common Stock
+SBUX,512459236.3,56.495,252,Starbucks Corporation Common Stock
+SCHW,263921579.865,29.2,252,The Charles Schwab Corporation
+SE,155667972.45,35.635000000000005,252,"Sea Limited American Depositary Shares, each representing one Class A Ordinary Share"
+SGI,73089518.075,60.095,252,Somnigroup International Inc.
+SHW,215044909.78000003,281.635,252,The Sherwin-Williams Company
+SIG,134150486.89,93.13999999999999,252,Signet Jewelers Limited
+SJM,117065001.92,129.66,252,The J.M. Smucker Company
+SLB,550019661.5999999,78.14500000000001,252,SLB Limited
+SLG,91337913.25999999,104.38,252,SL Green Realty Corp.
+SM,87217210.045,29.369999999999997,252,SM Energy Company
+SNA,76067946.75,156.45,252,Snap-on Incorporated
+SNY,74395851.775,40.02,252,Sanofi ADS
+SO,277884459.1,50.345,252,The Southern Company
+SPG,274357642.32,199.5,252,"Simon Property Group, Inc."
+SPGI,130722610.98,110.04,252,S&P Global Inc.
+SRE,131019966.175,103.995,252,Sempra
+STLD,80707437.1,24.685000000000002,252,"Steel Dynamics, Inc."
+STT,163849486.055,62.095,252,State Street Corporation
+STX,163423174.675,32.57,252,Seagate Technology Holdings PLC Ordinary Shares (Ireland)
+STZ,210416631.435,156.575,252,"Constellation Brands, Inc."
+SU,108033106.44,27.52,252,"Suncor Energy, Inc."
+SW,79739538.68,41.885000000000005,252,Smurfit WestRock plc
+SWK,117195455.75999999,114.07,252,"Stanley Black & Decker, Inc."
+SWKS,203221658.95000002,71.595,252,"Skyworks Solutions, Inc. Common Stock"
+SYF,214663870.625,28.240000000000002,252,SYNCHRONY FINANCIAL
+SYK,161005536.285,112.77000000000001,252,Stryker Corporation
+SYY,183476906.13,48.864999999999995,252,Sysco Corporation
+T,911407205.595,39.114999999999995,252,AT&T Inc.
+TAP,166054657.44,98.76,252,Molson Coors Beverage Company Class B
+TCOM,175642094.29500002,43.53,252,Trip.com Group Limited American Depositary Shares
+TD,62488554.97,43.67,252,Toronto Dominion Bank
+TDG,122587949.56,255.225,252,TransDigm Group Incorporated
+TECK,105362800.58500001,13.215,252,Teck Resources Limited
+TEL,99409434.41,61.144999999999996,252,TE Connectivity plc
+TEVA,296098570.74,52.84,252,Teva Pharmaceutical Industries Limited American Depositary Shares
+TFC,178274447.52500004,36.41,252,Truist Financial Corporation
+TGT,386434215.45,72.5,252,Target Corporation
+TJX,242006889.23000002,76.19,252,"TJX Companies, Inc. (The)"
+TMO,242562993.565,147.0,252,"Thermo Fisher Scientific, Inc."
+TMUS,160242877.9,43.605000000000004,252,"T-Mobile US, Inc. Common Stock"
+TNL,86110981.36000001,70.235,252,Travel + Leisure Co.
+TOL,72471392.61,28.725,252,"Toll Brothers, Inc."
+TPR,137638287.85000002,38.305,252,"Tapestry, Inc. Common Stock"
+TRGP,96158194.38,42.19,252,Targa Resources Corp.
+TRIP,121436118.41,63.425,252,"TripAdvisor, Inc. Common Stock"
+TROW,108634581.575,71.345,252,"T. Rowe Price Group, Inc. Common Stock"
+TRV,188311861.745,114.13499999999999,252,"The Travelers Companies, Inc."
+TS,66677164.75,27.12,252,Tenaris S. A.
+TSCO,107092050.17000002,85.43,252,Tractor Supply Company Common Stock
+TSLA,882343862.68,208.70499999999998,252,"Tesla, Inc. Common Stock"
+TSM,183797000.70999998,26.535,252,Taiwan Semiconductor Manufacturing Company Ltd.
+TSN,221820587.075,66.66499999999999,252,"Tyson Foods, Inc."
+TT,125874050.355,65.625,252,Trane Technologies plc
+TTE,82592835.215,47.585,252,TotalEnergies SE
+TXN,338953248.76,62.125,252,Texas Instruments Incorporated Common Stock
+TXT,63919612.195,38.75,252,"Textron, Inc."
+UA,193791225.865,39.56,252,"Under Armour, Inc. Class C Common Stock, $0.0003 1/3 par value"
+UAL,266767384.175,51.0,252,"United Airlines Holdings, Inc. Common Stock"
+UDR,65388167.715,35.7,252,"UDR, Inc."
+UHS,93777564.16499999,122.495,252,"Universal Health Services, Inc. Class B"
+ULTA,189147028.45,237.70499999999998,252,"Ulta Beauty, Inc. Common Stock"
+UNH,474103165.53499997,136.905,252,UNITEDHEALTH GROUP INCORPORATED (Delaware)
+UNM,64112040.345,34.065,252,Unum Group
+UNP,396623731.8,88.69999999999999,252,Union Pacific Corp.
+UPS,287263268.63,106.86,252,"United Parcel Service, Inc. Class B"
+URBN,64083473.4,30.405,252,"Urban Outfitters, Inc. Common Stock"
+URI,132543688.64500001,70.08500000000001,252,"United Rentals, Inc."
+USB,319486829.395,42.209999999999994,252,U.S. Bancorp
+UTHR,80217415.41,121.60499999999999,252,United Therapeutics Corporation Common Stock
+V,764445553.89,78.37,252,VISA Inc.
+VAL,81188814.61,9.605,252,Valaris Limited
+VALE,137541888.125,5.225,252,VALE S.A.
+VFC,157164620.425,61.31,252,V.F. Corporation
+VIPS,89411617.00999999,12.9,252,Vipshop Holdings Limited
+VLO,345361885.42,57.084999999999994,252,Valero Energy Corporation
+VMC,120723699.53,113.855,252,Vulcan Materials Company(Holding Company)
+VMRK,154308616.64499998,67.37,252,Vivmark Residential
+VOD,129340617.57,30.755000000000003,252,Vodafone Group Plc American Depositary Shares
+VRSN,75414045.47999999,82.09,252,"VeriSign, Inc. Common Stock"
+VRTX,163934667.005,87.145,252,Vertex Pharmaceuticals Incorporated Common Stock
+VTR,149681713.02,65.025,252,"Ventas, Inc."
+VZ,759306240.385,51.53,252,Verizon Communications
+WAB,69839490.06,77.045,252,Wabtec Inc.
+WAT,68830489.315,137.155,252,Waters Corp
+WDAY,122026833.295,77.715,252,"Workday, Inc. Class A Common Stock"
+WDC,253793701.47000003,48.06,252,Western Digital Corporation Common Stock
+WEC,114047208.225,58.72,252,"WEC Energy Group, Inc."
+WELL,161070090.435,69.405,252,Welltower Inc.
+WFC,1007818676.25,48.535,252,Wells Fargo & Co.
+WHR,155307177.43,169.95999999999998,252,Whirlpool Corp.
+WM,139028924.20999998,62.65,252,"Waste Management, Inc."
+WMB,231185774.49,22.715,252,Williams Companies Inc.
+WMT,624902571.575,69.81,252,Walmart Inc. Common Stock
+WPM,112710680.715,19.235,252,Wheaton Precious Metals Corp. Common Stock
+WSM,79678390.07999998,53.0,252,"Williams-Sonoma, Inc."
+WTW,86210154.36,123.41,251,Willis Towers Watson Public Limited Company Ordinary Shares
+WU,81143298.81,19.89,252,The Western Union Company
+WY,144595947.47,30.845,252,Weyerhaeuser Company
+WYNN,276708146.68999994,93.385,252,"Wynn Resorts, Limited Common stock"
+XEL,132468405.14499998,40.76,252,Xcel Energy Inc. Common Stock
+XOM,1064828753.38,87.04,252,ExxonMobil Holdings Corporation
+XRAY,89947973.42,60.355000000000004,252,DENTSPLY SIRONA Inc. Common Stock
+XRX,68082207.78,9.69,252,Xerox Holdings Corporation Common Stock
+YUM,245168903.325,81.82,252,"Yum! Brands, Inc."
+ZBH,165516255.94,115.415,252,"Zimmer Biomet Holdings, Inc."
+ZION,89461784.21000001,27.485,252,Zions Bancorporation N.A. Common Stock
+ZTS,173958891.19,48.425,252,ZOETIS INC.

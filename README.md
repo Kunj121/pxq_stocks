@@ -214,6 +214,29 @@ The division of labour: **MCP servers for live research and order flow**,
 
 ---
 
+## Paper replications — `research/`
+
+Replications of published strategies, one directory per paper. Each carries the spec
+extracted from the PDF, the universe frozen to CSV, the engine, unit tests, and a
+notebook holding the charts, assumptions, and what live deployment would require.
+
+| Study | Paper | Status |
+|---|---|---|
+| [`research/momentum_orb/`](research/momentum_orb/momentum_orb.md) | Zarattini, Barbon & Aziz (2024), *A Profitable Day Trading Strategy For The U.S. Equity Market* (SSRN 4729284) | 5-minute Opening Range Breakout on Stocks in Play |
+| [`research/ibs_country_etf/`](research/ibs_country_etf/ibs_country_etf.md) | Pandey & Joshi (2023), *Using Internal Bar Strength as a Key Indicator for Trading Country ETFs* (arXiv:2306.12434) | Daily IBS Min-Max mean reversion across 15 country ETFs |
+| [`research/hf_risk_mispricing/`](research/hf_risk_mispricing/hf_risk_mispricing.md) | Choi, Kim & Lee (2026), *Characteristic-based Risk Decomposition and Mispricing in High-frequency Return Panels* (SSRN 5632370) | Intraday jump/diffusion decomposition and a mispricing arbitrage portfolio — **partial**, no characteristic panel |
+
+Each replication that could plausibly be traded also carries an `executable/` runbook —
+the strategy sized to the account that actually exists, with the gates that must be met
+before a live order: [`research/momentum_orb/executable/momentum_orb.md`](research/momentum_orb/executable/momentum_orb.md).
+
+The method is a skill: [`.claude/skills/backtesting-a-paper/SKILL.md`](.claude/skills/backtesting-a-paper/SKILL.md).
+
+This is the **historical** lane — Alpaca, read-only. A replication may motivate a trade;
+it may never price one.
+
+---
+
 ## Conventions
 
 - `symbols` — uppercase array: `["AAPL", "MSFT"]`

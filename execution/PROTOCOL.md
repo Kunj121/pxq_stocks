@@ -51,10 +51,12 @@ approval of a different order is not consent for this one.
 ```
 place_equity_order
 ```
-Immediately after, record it:
+A `PostToolUse` hook journals the order automatically to `logs/trades.jsonl` and
+`logs/trades.csv` the moment this returns. Nothing to run by hand. If the hook did not
+fire — it reports itself with a `journaled …` message — fall back to:
 ```bash
 python journal.py add --symbol AAPL --side buy --qty 2 --price 227.50 \
-    --order-id <id from response> --account-last4 2690
+    --order-id <id from response> --account-last4 2690 --fees 0 --strategy test
 ```
 
 ### 8 — Confirm the fill
@@ -63,6 +65,15 @@ get_equity_orders
 ```
 Report actual fill state back. A placed order is not a filled order — do not tell the
 user they own something until the fill is confirmed.
+
+Then write the real fill back into the journal — the hook could only record the order
+as placed, with `average_price` and `fees` still null:
+```bash
+python journal.py amend --order-id <id> --price <average_price> \
+    --qty <cumulative_quantity> --fees <fees> --state filled
+```
+This is **required** for dollar-based orders, where the share count does not exist
+until the fill.
 
 ---
 

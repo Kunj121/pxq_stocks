@@ -1,0 +1,17 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "mcp__robinhood-trading__place_.*_order",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/execution/journal.py\" from-mcp --strategy test 2>/dev/null || true",
+            "statusMessage": "Journaling trade to logs/trades.csv",
+            "timeout": 15
+          }
+        ]
+      }
+    ]
+  }
+}
