@@ -204,7 +204,73 @@ one of its orders.
 
 ---
 
-## 8. Honest summary
+## 8. Paper trading it on Alpaca
+
+Running now, dry-run by default: [`daily_orb.py`](daily_orb.py),
+[`broker.py`](broker.py), [`run_daily.sh`](run_daily.sh),
+[`crontab.example`](crontab.example).
+
+**Alpaca paper removes every constraint Robinhood imposed — which is exactly why
+they are imposed back on.** The paper account (`PA3GIPVHZV99`) holds $94k with 4x
+margin and shorting enabled. Trading it as-is would measure a strategy nobody here
+can run. So `RobinhoodProfile` caps it:
+
+| | Alpaca paper allows | Imposed here | Why |
+|---|---|---|---|
+| Capital | $94,072 | **$10,000** | what the real account would hold |
+| Leverage | 4x | **1x** | and 1x has the *better* Sharpe — 2.48 vs 1.96 |
+| Shares | fractional | **whole only** | a stop-entry cannot be fractional |
+| Exit | `time_in_force="cls"` (MOC) | **market orders near the bell** | Robinhood has no MOC |
+| Commission | — | **$0** | matches Robinhood |
+
+### What it can and cannot prove
+
+**Can:** that 20 bracket stop orders land inside the 09:35 window (today's median
+entry was **1 minute** after the range closed — that is the real engineering
+risk); that RelVol computed live matches the backtest; that the flatten fires;
+that halts and missing bars degrade gracefully.
+
+**Cannot: slippage.** Alpaca's paper engine fills against the quote. The number
+that decides this strategy is 56,671 shares/year x slippage x 2 sides against a
+best-case edge near $1,900/yr. **Treat every paper P&L as an upper bound.**
+
+### Safety
+
+- **Dry run is the default.** Every phase prints the plan and submits nothing
+  unless `--place` / `ORB_PLACE=1`.
+- **`assert_paper()` refuses to run against a live account** — checked on the
+  account number prefix *and* the trading host, because a mis-set env var could
+  change either.
+- **Every order carries a `client_order_id`**, so a retry after a timeout cannot
+  double-fill.
+- **Each phase self-guards on the Eastern clock** and declines outside its
+  window, so a DST shift degrades to "did nothing" rather than trading an hour
+  wrong.
+- **Entries are brackets**, so a fill is never left without its protective stop.
+
+### Two live-vs-backtest divergences found and fixed
+
+Both would have made the live runner quietly disagree with the study it was
+validated against — the failure mode that matters most here:
+
+1. **RelVol denominator.** Using the last 14 *shared calendar dates* NaN'd out
+   any name that missed a session (HOG). The backtest uses each symbol's own
+   last 14 opening ranges. Fixed to match.
+2. **Opening-range completeness.** Requiring all five 1-minute bars dropped the
+   cross-section from 94 names to 83. The backtest only requires a bar at the
+   bell. Fixed to match.
+
+After both fixes the live plan reproduces the backtest's top-20 selection and
+ordering exactly.
+
+### Scheduling
+
+`crontab.example` is written but **not installed**. It arms with `ORB_PLACE=1`;
+leave it at `0` and every run is a dry run that logs the plan without trading.
+
+---
+
+## 9. Honest summary
 
 The edge replicates. The 5-minute ORB on high-relative-volume names produced a
 monotonic PnL-vs-RelVol relationship on independent data, from a different vendor,

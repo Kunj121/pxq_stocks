@@ -1,0 +1,472 @@
+"""Daily 5-minute ORB runner — Alpaca **paper**, with Robinhood's limits imposed.
+
+    python daily_orb.py screen           # pre-open: eligible names for today
+    python daily_orb.py enter            # 09:35 ET: rank, size, place (dry-run)
+    python daily_orb.py enter --place    # ...actually submit the orders
+    python daily_orb.py status
+    python daily_orb.py flatten --place  # 15:55 ET: close everything
+    python daily_orb.py report           # modelled vs actual fills
+
+Why paper on Alpaca but sized like Robinhood
+--------------------------------------------
+The Alpaca paper account has $94k and 4x margin. Trading it as-is would prove
+nothing about what this strategy does in the account that would actually run it.
+So every Robinhood constraint is imposed on top:
+
+    capital           $10,000, not the paper account's balance
+    leverage          1x. The replication found 1x has the BETTER Sharpe
+                      (2.48 vs 1.96) - leverage bought return, not edge.
+    commission        $0
+    shares            whole only. Robinhood fractional is market-orders-only in
+                      regular hours; a stop-entry cannot be fractional.
+    exit              market orders near the close. Robinhood has no
+                      market-on-close, so `cls` is deliberately NOT used even
+                      though Alpaca offers it.
+    session           regular hours, day orders only.
+
+What this can and cannot measure
+--------------------------------
+It CAN prove the plumbing: that 20 bracket stop orders land inside the 09:35
+window (today's median entry was 1 minute after the range closed), that RelVol
+computed live matches the backtest, that the flatten fires.
+
+It CANNOT measure slippage. Alpaca's paper engine fills against the quote. The
+number that decides this strategy is 56,671 shares/year x slippage x 2 sides
+against a best-case edge near $1,900/yr - and only real money measures it.
+Treat every P&L here as an upper bound.
+"""
+
+from __future__ import annotations
+
+import argparse
+import logging
+import sys
+from dataclasses import dataclass
+from datetime import date
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+
+HERE = Path(__file__).resolve().parent
+STRAT = HERE.parent
+ROOT = STRAT.parent.parent
+sys.path[:0] = [str(HERE), str(STRAT), str(ROOT)]
+
+from backtest.data import load_bars
+from broker import BrokerError, PaperBroker
+from orb import ORBConfig, daily_features
+
+LOG_DIR = ROOT / "execution" / "logs"
+FILL_LOG = LOG_DIR / "orb_paper_fills.csv"
+PLAN_DIR = LOG_DIR / "orb_plans"
+
+logging.basicConfig(level=logging.INFO, format="%(message)s")
+logging.getLogger("httpx").setLevel(logging.WARNING)
+logging.getLogger("backtest").setLevel(logging.WARNING)
+log = logging.getLogger("orb.daily")
+
+
+@dataclass(frozen=True)
+class RobinhoodProfile:
+    """The constraints of the account this is a proxy for."""
+    capital: float = 10_000.0
+    max_leverage: float = 1.0
+    commission_per_share: float = 0.0
+    whole_shares_only: bool = True
+    allow_short: bool = True
+    use_market_on_close: bool = False    # Robinhood has no MOC
+    max_positions: int = 20
+
+    def describe(self) -> str:
+        return (f"${self.capital:,.0f} | {self.max_leverage:g}x | "
+                f"${self.commission_per_share:.4f}/sh | "
+                f"{'short OK' if self.allow_short else 'long only'} | "
+                f"{'MOC' if self.use_market_on_close else 'market-at-close'}")
+
+
+# --------------------------------------------------------------------------- #
+# signal
+# --------------------------------------------------------------------------- #
+
+def opening_ranges(minutes: pd.DataFrame, n: int = 5) -> pd.DataFrame:
+    """Per (date, symbol) opening-range OHLCV from a 1-minute panel."""
+    idx = minutes.index.get_level_values("timestamp")
+    mod = idx.hour * 60 + idx.minute
+    m = minutes[(mod >= 570) & (mod < 570 + n)].copy()
+    m["date"] = m.index.get_level_values("timestamp").date
+    g = m.groupby(["date", m.index.get_level_values("symbol")])
+    m["_mod"] = mod[(mod >= 570) & (mod < 570 + n)]
+    out = pd.DataFrame({
+        "or_open": g["open"].first(), "or_high": g["high"].max(),
+        "or_low": g["low"].min(), "or_close": g["close"].last(),
+        "or_volume": g["volume"].sum(), "bars": g["close"].size(),
+        "has_open_bar": g["_mod"].min().eq(570),
+    })
+    out.index.names = ["date", "symbol"]
+    return out
+
+
+def _live_bars(symbols: list[str], start: str, end: str, timeframe: str) -> pd.DataFrame:
+    """Fetch straight from the API, bypassing the on-disk cache.
+
+    The cache stores each symbol's full history in one file. Reading 100 of
+    those to recover three weeks of bars means decompressing gigabytes — fine
+    for research, hopeless for a job that must decide inside the 09:35 window.
+    Today's opening range is ~5 bars per name: one request, not a disk scan.
+    """
+    from backtest.client import AlpacaClient
+    rows = []
+    with AlpacaClient() as c:
+        for i in range(0, len(symbols), 100):
+            data = c.stock_bars(symbols[i:i + 100], timeframe, start, end,
+                                adjustment="raw")
+            for sym, bars in data.items():
+                for b in bars:
+                    rows.append({"timestamp": b["t"], "symbol": sym,
+                                 "open": b["o"], "high": b["h"], "low": b["l"],
+                                 "close": b["c"], "volume": b["v"]})
+    if not rows:
+        return pd.DataFrame()
+    df = pd.DataFrame(rows)
+    df["timestamp"] = pd.to_datetime(df["timestamp"], utc=True).dt.tz_convert(
+        "America/New_York")
+    return df.set_index(["timestamp", "symbol"]).sort_index()
+
+
+OR_HISTORY = LOG_DIR / "orb_or_history.csv"
+
+
+def load_or_history() -> pd.DataFrame:
+    if not OR_HISTORY.exists():
+        return pd.DataFrame(columns=["date", "symbol", "or_volume"])
+    h = pd.read_csv(OR_HISTORY)
+    h["date"] = pd.to_datetime(h["date"]).dt.date
+    return h
+
+
+def append_or_history(today: pd.DataFrame) -> None:
+    """Record today's opening ranges so tomorrow's RelVol needs no backfill."""
+    LOG_DIR.mkdir(parents=True, exist_ok=True)
+    cols = ["date", "symbol", "or_open", "or_high", "or_low", "or_close",
+            "or_volume"]
+    row = today.reset_index()[cols]
+    existing = load_or_history()
+    if len(existing):
+        key = set(zip(existing["date"], existing["symbol"]))
+        row = row[[k not in key for k in zip(row["date"], row["symbol"])]]
+    if len(row):
+        row.to_csv(OR_HISTORY, mode="a", header=not OR_HISTORY.exists(),
+                   index=False)
+
+
+def build_signals(symbols: list[str], session: date, cfg: ORBConfig) -> pd.DataFrame:
+    """Everything needed to decide today's book, as known at 09:35.
+
+    Two small live requests, not a cache scan: ~30 daily bars per name for the
+    ATR and volume filters, and today's first five minutes for the opening
+    range. The RelVol denominator comes from the rolling history file.
+    """
+    daily_start = (pd.Timestamp(session) - pd.Timedelta(days=90)).date()
+    nxt = (pd.Timestamp(session) + pd.Timedelta(days=1)).date()
+
+    daily_raw = _live_bars(symbols, str(daily_start), str(nxt), "1Day")
+    if daily_raw.empty:
+        raise SystemExit("no daily bars returned")
+    feats = daily_features(daily_raw, cfg)
+
+    minutes = _live_bars(symbols, str(session), str(nxt), "1Min")
+    if minutes.empty:
+        raise SystemExit(f"no minute bars for {session} — is it a trading day?")
+    today = opening_ranges(minutes, cfg.opening_minutes)
+    today = today.xs(session, level="date") if session in \
+        today.index.get_level_values("date") else today.iloc[:0]
+    if today.empty:
+        raise SystemExit(f"no opening range for {session}")
+
+    hist = load_or_history()
+    hist = hist[hist["date"] < session]
+    if len(hist):
+        # Each symbol's own previous `lookback` opening ranges — NOT the last
+        # `lookback` calendar dates. A name that missed a session still has 14
+        # observations of its own; requiring presence on 14 shared dates would
+        # silently NaN it out and drop it from the ranking, which is exactly how
+        # a live runner drifts away from the backtest it was validated against.
+        ordered = hist.sort_values(["symbol", "date"])
+        tail = ordered.groupby("symbol").tail(cfg.lookback)
+        counts = tail.groupby("symbol")["or_volume"].size()
+        means = tail.groupby("symbol")["or_volume"].mean()
+        avg = means.where(counts >= cfg.lookback)
+    else:
+        avg = pd.Series(dtype=float)
+    today["or_volume_avg"] = today.index.map(avg)
+    today["rel_volume"] = today["or_volume"] / today["or_volume_avg"]
+
+    if session in feats.index.get_level_values("date"):
+        f = feats.xs(session, level="date")
+    else:
+        raise SystemExit(f"no daily features for {session}")
+    today["atr"] = today.index.map(f["atr"])
+    today["avg_volume"] = today.index.map(f["avg_volume"])
+    today["day_open"] = today["or_open"]
+    # Require the range to actually start at the bell, matching the backtest.
+    # Demanding all `opening_minutes` bars be present is stricter than the study
+    # and quietly drops names that simply had no print in one minute.
+    today = today[today["has_open_bar"] & (today["bars"] >= 1)]
+    today["date"] = session
+    return today.reset_index()
+
+
+def build_plan(sig: pd.DataFrame, cfg: ORBConfig,
+               prof: RobinhoodProfile) -> pd.DataFrame:
+    """Filter, rank, choose direction, size. No orders placed."""
+    s = sig.copy()
+    s["direction"] = np.where(s.or_close > s.or_open, 1,
+                              np.where(s.or_close < s.or_open, -1, 0))
+    m = (s.day_open.gt(cfg.min_price) & s.avg_volume.ge(cfg.min_avg_volume)
+         & s.atr.gt(cfg.min_atr) & s.rel_volume.ge(cfg.min_rel_volume)
+         & s.direction.ne(0))
+    if not prof.allow_short:
+        m &= s.direction.eq(1)
+    s = s[m].sort_values("rel_volume", ascending=False).head(prof.max_positions).copy()
+    if s.empty:
+        return s
+
+    s["risk_per_share"] = cfg.stop_atr_frac * s.atr
+    s["entry"] = np.where(s.direction == 1, s.or_high, s.or_low)
+    s["stop"] = s.entry - s.direction * s.risk_per_share
+    s["shares"] = np.floor(cfg.risk_per_trade * prof.capital / s.risk_per_share)
+
+    gross = (s.shares * s.entry).sum()
+    cap = prof.max_leverage * prof.capital
+    s["leverage_scale"] = 1.0
+    if gross > cap and gross > 0:
+        s["leverage_scale"] = cap / gross
+        s["shares"] = np.floor(s.shares * s.leverage_scale)
+    if prof.whole_shares_only:
+        s["shares"] = s.shares.astype(int)
+    s = s[s.shares > 0]
+    s["side"] = np.where(s.direction == 1, "buy", "sell")
+    s["notional"] = s.shares * s.entry
+    return s
+
+
+# --------------------------------------------------------------------------- #
+# commands
+# --------------------------------------------------------------------------- #
+
+def _universe() -> list[str]:
+    return pd.read_csv(STRAT / "universe_selected.csv")["symbol"].tolist()
+
+
+def _session(args) -> date:
+    return pd.Timestamp(args.date).date() if args.date else pd.Timestamp.now(
+        tz="America/New_York").date()
+
+
+def cmd_build_history(args) -> None:
+    """One-time backfill of the opening-range history from cached minute bars.
+
+    Slow by design — it reads the full-history cache once so that every later
+    run needs only one small live request.
+    """
+    cfg = ORBConfig()
+    syms = _universe()
+    end = _session(args)
+    start = (pd.Timestamp(end) - pd.Timedelta(days=args.days)).date()
+    frames = []
+    for i in range(0, len(syms), 25):
+        chunk = syms[i:i + 25]
+        mn = load_bars(chunk, str(start), str(end), "1Min",
+                       session="regular", adjustment="raw").frame
+        if not mn.empty:
+            frames.append(opening_ranges(mn, cfg.opening_minutes))
+        print(f"  [{min(i+25, len(syms)):3d}/{len(syms)}]", flush=True)
+    if not frames:
+        print("nothing to backfill")
+        return
+    allor = pd.concat(frames).sort_index()
+    append_or_history(allor)
+    h = load_or_history()
+    print(f"history now {len(h):,} rows, "
+          f"{h['date'].min()} -> {h['date'].max()}, "
+          f"{h['symbol'].nunique()} symbols -> {OR_HISTORY}")
+
+
+def cmd_screen(args) -> None:
+    cfg, prof = ORBConfig(), RobinhoodProfile(capital=args.capital)
+    sess = _session(args)
+    sig = build_signals(_universe(), sess, cfg)
+    ok = sig[(sig.day_open > cfg.min_price) & (sig.avg_volume >= cfg.min_avg_volume)
+             & (sig.atr > cfg.min_atr)]
+    print(f"session {sess} | universe {len(sig)} with an opening range")
+    print(f"pass price/liquidity/ATR filters: {len(ok)}")
+    print(f"  of those, RelVol >= {cfg.min_rel_volume:g}: "
+          f"{int((ok.rel_volume >= cfg.min_rel_volume).sum())}")
+
+
+def cmd_enter(args) -> None:
+    cfg = ORBConfig()
+    prof = RobinhoodProfile(capital=args.capital, allow_short=not args.long_only)
+    sess = _session(args)
+    log.info("profile: %s", prof.describe())
+
+    with PaperBroker() as b:
+        acct = b.assert_paper()
+        log.info("paper account %s (equity $%s — NOT the sizing basis)",
+                 acct["account_number"], acct["equity"])
+
+        sig = build_signals(_universe(), sess, cfg)
+        plan = build_plan(sig, cfg, prof)
+        if plan.empty:
+            print("no qualifying names today")
+            return
+
+        cols = ["symbol", "side", "rel_volume", "entry", "stop", "risk_per_share",
+                "shares", "notional"]
+        print(f"\n=== plan for {sess} — {len(plan)} positions ===")
+        print(plan[cols].round(3).to_string(index=False))
+        gross = plan.notional.sum()
+        print(f"\ngross ${gross:,.0f} on ${prof.capital:,.0f} "
+              f"= {gross/prof.capital:.2f}x (cap {prof.max_leverage:g}x)")
+        print(f"risk if every stop hits: ${(plan.shares*plan.risk_per_share).sum():,.2f}")
+
+        PLAN_DIR.mkdir(parents=True, exist_ok=True)
+        plan.to_csv(PLAN_DIR / f"plan_{sess}.csv", index=False)
+        append_or_history(sig.set_index(["date", "symbol"]))
+
+        if not args.place:
+            print("\nDRY RUN — nothing submitted. Re-run with --place to send.")
+            return
+
+        clock = b.clock()
+        if not clock.get("is_open"):
+            print("\nmarket is closed — refusing to place")
+            return
+
+        placed = []
+        for _, r in plan.iterrows():
+            cid = f"orb-{sess}-{r.symbol}"[:48]
+            try:
+                o = b.stop_entry_with_bracket(
+                    r.symbol, r.side, int(r.shares), float(r.entry),
+                    float(r.stop), client_order_id=cid)
+                placed.append((r.symbol, o.id, "bracket"))
+            except BrokerError as exc:
+                try:
+                    o = b.stop_entry_simple(r.symbol, r.side, int(r.shares),
+                                            float(r.entry), client_order_id=cid)
+                    placed.append((r.symbol, o.id, f"simple (bracket rejected)"))
+                except BrokerError as exc2:
+                    placed.append((r.symbol, "", f"FAILED: {exc2}"[:90]))
+        print()
+        for sym, oid, note in placed:
+            print(f"  {sym:6s} {note:28s} {oid}")
+        print(f"\n{sum(1 for _,o,_ in placed if o)} of {len(plan)} submitted")
+
+
+def cmd_status(args) -> None:
+    with PaperBroker() as b:
+        b.assert_paper()
+        pos, orders = b.positions(), b.orders("open")
+        print(f"open positions: {len(pos)} | open orders: {len(orders)}")
+        if pos:
+            df = pd.DataFrame([{
+                "symbol": p["symbol"], "qty": float(p["qty"]),
+                "avg_entry": float(p["avg_entry_price"]),
+                "current": float(p["current_price"]),
+                "unrealized": float(p["unrealized_pl"]),
+            } for p in pos])
+            print(df.round(3).to_string(index=False))
+            print(f"\nunrealized total: ${df.unrealized.sum():+,.2f}")
+        for o in orders:
+            print(f"  {o.symbol:6s} {o.side:4s} {o.type:5s} qty {o.qty:g} "
+                  f"stop {o.stop_price} [{o.status}]")
+
+
+def cmd_flatten(args) -> None:
+    prof = RobinhoodProfile()
+    with PaperBroker() as b:
+        b.assert_paper()
+        pos, orders = b.positions(), b.orders("open")
+        print(f"{len(pos)} positions, {len(orders)} resting orders")
+        if not args.place:
+            print("DRY RUN — re-run with --place to close.")
+            return
+        if orders:
+            b.cancel_all()
+            print("cancelled resting orders")
+        if pos:
+            # Robinhood has no market-on-close, so this is what it would do:
+            # plain market orders near the bell, not a `cls` order.
+            b.close_all_positions(cancel_orders=True)
+            print(f"submitted market exits for {len(pos)} positions")
+
+
+def cmd_report(args) -> None:
+    sess = _session(args)
+    plan_path = PLAN_DIR / f"plan_{sess}.csv"
+    if not plan_path.exists():
+        print(f"no plan recorded for {sess}")
+        return
+    plan = pd.read_csv(plan_path).set_index("symbol")
+    with PaperBroker() as b:
+        b.assert_paper()
+        fills = [o for o in b.orders("closed", limit=500) if o.filled_qty > 0]
+    if not fills:
+        print("no fills yet")
+        return
+    rows = []
+    for o in fills:
+        if o.symbol not in plan.index:
+            continue
+        p = plan.loc[o.symbol]
+        modelled = float(p.entry) if o.type == "stop" else np.nan
+        actual = o.filled_avg_price
+        slip = (actual - modelled) * (1 if p.side == "buy" else -1) \
+            if (actual and np.isfinite(modelled)) else np.nan
+        rows.append({"date": sess, "symbol": o.symbol, "side": o.side,
+                     "type": o.type, "qty": o.filled_qty,
+                     "modelled_price": modelled, "actual_price": actual,
+                     "slippage_per_share": slip, "order_id": o.id})
+    if not rows:
+        print("no fills matched today's plan")
+        return
+    df = pd.DataFrame(rows)
+    print(df.round(4).to_string(index=False))
+    s = df.slippage_per_share.dropna()
+    if len(s):
+        print(f"\nmedian slippage vs modelled: ${s.median():+.4f}/share")
+        print("NOTE: paper fills are simulated against the quote. This number is "
+              "not evidence about real slippage.")
+    LOG_DIR.mkdir(parents=True, exist_ok=True)
+    df.to_csv(FILL_LOG, mode="a", header=not FILL_LOG.exists(), index=False)
+    print(f"-> appended to {FILL_LOG}")
+
+
+def main() -> None:
+    p = argparse.ArgumentParser(description=__doc__.split("\n")[0])
+    p.add_argument("--capital", type=float, default=10_000.0,
+                   help="sizing basis, NOT the paper account balance")
+    p.add_argument("--date", default=None, help="YYYY-MM-DD (default: today ET)")
+    p.add_argument("--long-only", action="store_true")
+    sub = p.add_subparsers(dest="cmd", required=True)
+    hp = sub.add_parser("build-history")
+    hp.add_argument("--days", type=int, default=60)
+    hp.set_defaults(func=cmd_build_history)
+    for name, fn, needs_place in (("screen", cmd_screen, False),
+                                  ("enter", cmd_enter, True),
+                                  ("status", cmd_status, False),
+                                  ("flatten", cmd_flatten, True),
+                                  ("report", cmd_report, False)):
+        sp = sub.add_parser(name)
+        if needs_place:
+            sp.add_argument("--place", action="store_true",
+                            help="actually submit (default: dry run)")
+        sp.set_defaults(func=fn)
+    args = p.parse_args()
+    args.func(args)
+
+
+if __name__ == "__main__":
+    main()

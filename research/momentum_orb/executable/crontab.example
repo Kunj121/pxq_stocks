@@ -1,0 +1,20 @@
+# Daily 5-minute ORB on Alpaca PAPER — install with:  crontab -e
+#
+# Times are LOCAL (America/Chicago). Each phase re-checks the Eastern-time
+# clock itself and declines if the wall clock has drifted out of its window,
+# so a DST shift degrades to "did nothing" rather than "traded at 08:35 ET".
+#
+# ORB_PLACE=1 is what arms it. Without that variable every phase is a dry run
+# that prints the plan and submits nothing. Start without it.
+
+ORB_PLACE=0
+ORB=/Users/kunjshah/Downloads/pxq_stocks/research/momentum_orb/executable/run_daily.sh
+
+# 08:37 CT = 09:37 ET — two minutes after the opening range closes
+37 8 * * 1-5 $ORB enter
+
+# 14:56 CT = 15:56 ET — flatten before the bell
+56 14 * * 1-5 $ORB flatten
+
+# 15:10 CT = 16:10 ET — record fills against the plan
+10 15 * * 1-5 $ORB report
