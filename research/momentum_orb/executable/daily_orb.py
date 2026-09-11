@@ -255,8 +255,21 @@ def build_plan(sig: pd.DataFrame, cfg: ORBConfig,
 # commands
 # --------------------------------------------------------------------------- #
 
-def _universe() -> list[str]:
-    return pd.read_csv(STRAT / "universe_selected.csv")["symbol"].tolist()
+DEFAULT_UNIVERSE = HERE / "universe_live.csv"
+
+
+def _universe(path: str | None = None) -> list[str]:
+    """Symbols to trade.
+
+    Defaults to `universe_live.csv` (Mag 7 + index/sector ETFs), NOT the
+    study's `universe_selected.csv`. The latter was seeded from the tickers the
+    paper itself names, which is fine for replicating a 2016-2023 result and
+    wrong for deciding what to trade tomorrow.
+    """
+    f = Path(path) if path else DEFAULT_UNIVERSE
+    if not f.exists():
+        raise SystemExit(f"universe file not found: {f}")
+    return pd.read_csv(f)["symbol"].tolist()
 
 
 def _session(args) -> date:
@@ -271,7 +284,7 @@ def cmd_build_history(args) -> None:
     run needs only one small live request.
     """
     cfg = ORBConfig()
-    syms = _universe()
+    syms = _universe(args.universe)
     end = _session(args)
     start = (pd.Timestamp(end) - pd.Timedelta(days=args.days)).date()
     frames = []
@@ -296,7 +309,7 @@ def cmd_build_history(args) -> None:
 def cmd_screen(args) -> None:
     cfg, prof = ORBConfig(), RobinhoodProfile(capital=args.capital)
     sess = _session(args)
-    sig = build_signals(_universe(), sess, cfg)
+    sig = build_signals(_universe(args.universe), sess, cfg)
     ok = sig[(sig.day_open > cfg.min_price) & (sig.avg_volume >= cfg.min_avg_volume)
              & (sig.atr > cfg.min_atr)]
     print(f"session {sess} | universe {len(sig)} with an opening range")
@@ -316,7 +329,7 @@ def cmd_enter(args) -> None:
         log.info("paper account %s (equity $%s — NOT the sizing basis)",
                  acct["account_number"], acct["equity"])
 
-        sig = build_signals(_universe(), sess, cfg)
+        sig = build_signals(_universe(args.universe), sess, cfg)
         plan = build_plan(sig, cfg, prof)
         if plan.empty:
             print("no qualifying names today")
@@ -450,6 +463,8 @@ def main() -> None:
                    help="sizing basis, NOT the paper account balance")
     p.add_argument("--date", default=None, help="YYYY-MM-DD (default: today ET)")
     p.add_argument("--long-only", action="store_true")
+    p.add_argument("--universe", default=None,
+                   help="CSV with a `symbol` column (default: universe_live.csv)")
     sub = p.add_subparsers(dest="cmd", required=True)
     hp = sub.add_parser("build-history")
     hp.add_argument("--days", type=int, default=60)
