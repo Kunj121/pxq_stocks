@@ -18,13 +18,23 @@ __pycache__/
 .vscode/
 .DS_Store
 
-# data / output
-data/*.csv
-data/*.parquet
-data/alpaca_cache/
-out/*
-!out/.gitkeep
+# data / output — see the block below
+# trading records stay local.
+# NB: a single `*` does not cross directory boundaries, so `logs/*.csv` misses
+# `logs/orb_plans/plan_*.csv`. Ignore the whole tree instead, and keep .gitkeep.
+execution/logs/**
+!execution/logs/.gitkeep
 
-# trading records stay local
-execution/logs/*.jsonl
-execution/logs/*.csv
+# raw and derived market data never leaves the machine, wherever it lands
+*.parquet
+*.feather
+*.h5
+*.pkl
+data/**
+!data/.gitkeep
+out/**
+!out/.gitkeep
+**/alpaca_cache/**
+**/*_bars.csv
+**/*_fills.csv
+**/fetch_progress.csv
