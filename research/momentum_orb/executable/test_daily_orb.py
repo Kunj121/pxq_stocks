@@ -156,3 +156,50 @@ def test_opening_range_tolerates_a_gap_after_the_bell():
 def test_opening_range_ignores_bars_after_the_window():
     o = opening_ranges(_bars(["09:30", "09:31", "10:15", "15:59"]))
     assert int(o["bars"].iloc[0]) == 2
+
+
+# --- IV-sized stops (the shadow book) --------------------------------------
+
+def iv_row(symbol, price, atr, iv_move, rel=2.0):
+    r = sig_row(symbol, price, price * 1.01, price * 1.02, price * 0.99, atr, rel=rel)
+    r["iv_move"] = iv_move
+    return r
+
+
+def test_iv_stops_rescale_to_match_atr_width():
+    """Switching the stop to IV must not silently also make it tighter. IV-move
+    is a 1-sigma close-to-close move and ATR a high-low range, so the raw ratio
+    is ~0.76 — rescaling holds median stop width fixed, leaving only the
+    disagreement between the two estimates under test."""
+    rows = [iv_row(f"S{i}", 100, 4.0, 3.0) for i in range(8)]
+    atr_plan = build_plan(frame(rows), ORBConfig(), RobinhoodProfile())
+    iv_plan = build_plan(frame(rows), ORBConfig(), RobinhoodProfile(), stop_source="iv")
+    assert iv_plan["risk_per_share"].median() == pytest.approx(
+        atr_plan["risk_per_share"].median(), rel=1e-6)
+
+
+def test_iv_stops_differ_where_iv_disagrees_with_atr():
+    """Uniform disagreement rescales away; it is the SPREAD that must survive."""
+    rows = [iv_row("CALM", 100, 4.0, 2.0),     # options price much less move
+            iv_row("HOT", 100, 4.0, 6.0),      # ...and much more
+            iv_row("MID", 100, 4.0, 3.0)]
+    atr_plan = build_plan(frame(rows), ORBConfig(), RobinhoodProfile()).set_index("symbol")
+    iv_plan = build_plan(frame(rows), ORBConfig(), RobinhoodProfile(),
+                         stop_source="iv").set_index("symbol")
+    assert atr_plan["risk_per_share"].nunique() == 1          # ATR says identical
+    assert iv_plan.loc["HOT", "risk_per_share"] > iv_plan.loc["CALM", "risk_per_share"]
+
+
+def test_missing_iv_falls_back_to_atr():
+    rows = [iv_row("HAS", 100, 4.0, 3.0), iv_row("NONE", 100, 4.0, np.nan)]
+    p = build_plan(frame(rows), ORBConfig(), RobinhoodProfile(),
+                   stop_source="iv").set_index("symbol")
+    assert p.loc["NONE", "risk_per_share"] == pytest.approx(0.10 * 4.0)
+
+
+def test_atr_book_is_untouched_when_no_iv_column_exists():
+    """The live book must not depend on the options feed being up."""
+    rows = [sig_row(f"S{i}", 100, 101, 102, 99, 4.0) for i in range(5)]
+    a = build_plan(frame(rows), ORBConfig(), RobinhoodProfile())
+    b = build_plan(frame(rows), ORBConfig(), RobinhoodProfile(), stop_source="iv")
+    assert (a["risk_per_share"].values == b["risk_per_share"].values).all()

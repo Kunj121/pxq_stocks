@@ -291,8 +291,70 @@ def card(k, v, cls=""):
     return f'<div class="card"><div class="k">{k}</div><div class="v {cls}">{v}</div></div>'
 
 
+def shadow_section(session: date, plan: pd.DataFrame, results: pd.DataFrame,
+                   cfg: ORBConfig) -> str:
+    """Live book (ATR stops) against the shadow book (IV-sized stops).
+
+    The shadow is never placed — two books cannot hold conflicting stops on one
+    symbol in a single account. Because an ORB outcome is fully determined by
+    entry, stop and exit prices, simulating it from the same bars is exact.
+    """
+    path = LOG_DIR / "orb_plans" / f"shadow_iv_{session}.csv"
+    if not path.exists() or results.empty:
+        return ""
+    sh = pd.read_csv(path)
+    res = results.set_index("symbol")
+    rows, tot = [], {"atr": 0.0, "iv": 0.0}
+    for _, r in sh.iterrows():
+        if r.symbol not in res.index:
+            continue
+        o = res.loc[r.symbol]
+        if pd.isna(o.entry_price):
+            continue
+        # Re-price the same path against the shadow's wider/narrower stop.
+        d = o.direction
+        sstop = o.entry_price - d * r.risk_per_share
+        hit = (o.low_after <= sstop) if d == 1 else (o.high_after >= sstop)
+        sexit = sstop if hit else o.eod_close
+        s_r = (sexit - o.entry_price) * d / r.risk_per_share
+        a_pnl = float(o.pnl) if pd.notna(o.pnl) else 0.0
+        s_pnl = int(r.shares) * (sexit - o.entry_price) * d
+        tot["atr"] += a_pnl; tot["iv"] += s_pnl
+        rows.append((r.symbol, o.pnl_r, a_pnl, s_r, s_pnl, r.risk_per_share,
+                     float(o.risk_per_share)))
+    if not rows:
+        return ""
+    h = ["<h2>Shadow book — IV-sized stops</h2>",
+         '<p class="note">Identical signals, but the protective stop is measured '
+         'from the options market\'s forward volatility estimate instead of the '
+         'trailing 14-day range, rescaled so median stop width matches (otherwise '
+         'the test would just be "tighter stops"). Not placed — two books cannot '
+         'hold conflicting stops on one symbol in one account. Simulated from the '
+         'same bars, which for an ORB is exact rather than approximate.</p>',
+         '<div class="scroll"><table><tr><th>symbol</th>'
+         '<th class="n">stop ATR</th><th class="n">stop IV</th>'
+         '<th class="n">R (ATR)</th><th class="n">R (IV)</th>'
+         '<th class="n">P&L (ATR)</th><th class="n">P&L (IV)</th></tr>']
+    for sym, ar, ap_, sr, sp, srisk, arisk in rows:
+        cls_a = "pos" if ap_ > 0 else "neg"
+        cls_s = "pos" if sp > 0 else "neg"
+        h.append(f'<tr><td><b>{sym}</b></td><td class="n">${arisk:,.2f}</td>'
+                 f'<td class="n">${srisk:,.2f}</td>'
+                 f'<td class="n">{ar:+.2f}</td><td class="n">{sr:+.2f}</td>'
+                 f'<td class="n {cls_a}">${ap_:+,.2f}</td>'
+                 f'<td class="n {cls_s}">${sp:+,.2f}</td></tr>')
+    diff = tot["iv"] - tot["atr"]
+    h.append(f'<tr><td><b>total</b></td><td></td><td></td><td></td><td></td>'
+             f'<td class="n"><b>${tot["atr"]:+,.2f}</b></td>'
+             f'<td class="n"><b>${tot["iv"]:+,.2f}</b></td></tr></table></div>')
+    h.append(f'<p class="note"><b>IV stops {"gained" if diff>0 else "cost"} '
+             f'${abs(diff):,.2f} today.</b> One session proves nothing — the '
+             'question is whether this accumulates over months.</p>')
+    return "".join(h)
+
+
 def render(session: date, sig, plan, funnel, results, prof, cfg,
-           charts, funnel_png, relvol_png, acct) -> str:
+           charts, funnel_png, relvol_png, acct, shadow_html="") -> str:
     traded = results[results.exit_reason.isin(["stop", "eod"])] if len(results) else results
     pnl = float(traded["pnl"].sum()) if len(traded) else 0.0
     tot_r = float(traded["pnl_r"].sum()) if len(traded) else 0.0
@@ -386,6 +448,9 @@ def render(session: date, sig, plan, funnel, results, prof, cfg,
             if b64:
                 h.append(f'<img src="data:image/png;base64,{b64}" alt="{sym}">')
 
+    if shadow_html:
+        h.append(shadow_html)
+
     h.append('<div class="foot">Generated from Alpaca bars — historical lane, read-only. '
              'Marks may lag the live tape by ~15 minutes while the session is open '
              '(SIP embargo). Paper account: no real money. '
@@ -441,6 +506,14 @@ def main() -> None:
             r["rel_volume"] = float(pl.loc[s, "rel_volume"])
             sh = int(pl.loc[s, "shares"])
             r["pnl"] = sh * r.pnl_per_share if pd.notna(r.pnl_per_share) else np.nan
+            # Extremes after the entry bar, so the shadow book's different stop
+            # can be re-priced against the same realised path.
+            if pd.notna(r.entry_minute):
+                after = m[(m.index.hour * 60 + m.index.minute) >= int(r.entry_minute)]
+                r["low_after"] = float(after["low"].min()) if len(after) else np.nan
+                r["high_after"] = float(after["high"].max()) if len(after) else np.nan
+            else:
+                r["low_after"] = r["high_after"] = np.nan
             rows.append(r)
             charts.append((s, trade_chart(s, m, r, pl.loc[s], cfg)))
         results = pd.DataFrame(rows)
@@ -453,7 +526,8 @@ def main() -> None:
         acct = "unavailable"
 
     html = render(sess, sig, plan, funnel, results, prof, cfg, charts,
-                  funnel_chart(funnel), relvol_chart(funnel), acct)
+                  funnel_chart(funnel), relvol_chart(funnel), acct,
+                  shadow_section(sess, plan, results, cfg))
     LOG_DIR.mkdir(parents=True, exist_ok=True)
     out = LOG_DIR / f"orb_dashboard_{sess}.html"
     out.write_text(html)

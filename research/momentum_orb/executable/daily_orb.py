@@ -211,6 +211,21 @@ def build_signals(symbols: list[str], session: date, cfg: ORBConfig) -> pd.DataF
     today["atr"] = today.index.map(f["atr"])
     today["avg_volume"] = today.index.map(f["avg_volume"])
     today["day_open"] = today["or_open"]
+
+    # Forward-looking volatility: recorded every session so a panel accumulates.
+    # Without history there is no way to test whether IV makes a better stop than
+    # the trailing range. Failure here must never affect the ATR book.
+    try:
+        from iv import atm_iv, implied_daily_move, log_iv
+        ivf = atm_iv(list(today.index))
+        today["iv"] = today.index.map(ivf["iv"])
+        today["iv_move"] = implied_daily_move(today["or_close"], today["iv"])
+        log_iv(session, ivf)
+    except Exception as exc:
+        log.warning("IV snapshot unavailable (%s) — ATR book unaffected", exc)
+        today["iv"] = np.nan
+        today["iv_move"] = np.nan
+
     # Require the range to actually start at the bell, matching the backtest.
     # Demanding all `opening_minutes` bars be present is stricter than the study
     # and quietly drops names that simply had no print in one minute.
@@ -219,9 +234,20 @@ def build_signals(symbols: list[str], session: date, cfg: ORBConfig) -> pd.DataF
     return today.reset_index()
 
 
-def build_plan(sig: pd.DataFrame, cfg: ORBConfig,
-               prof: RobinhoodProfile) -> pd.DataFrame:
-    """Filter, rank, choose direction, size. No orders placed."""
+def build_plan(sig: pd.DataFrame, cfg: ORBConfig, prof: RobinhoodProfile,
+               stop_source: str = "atr") -> pd.DataFrame:
+    """Filter, rank, choose direction, size. No orders placed.
+
+    `stop_source` selects what the protective stop is measured from:
+
+      "atr"  10% of ATR(14) — the paper's rule, a TRAILING realised range.
+      "iv"   10% of the IV-implied daily move, RESCALED so the median stop width
+             matches the ATR book. Without that rescale, switching to IV would
+             also make every stop ~24% tighter (IV-move is a 1-sigma
+             close-to-close move, ATR a high-low range), and the test would
+             measure "tighter stops" rather than "better volatility estimate".
+             Rows lacking an IV fall back to ATR.
+    """
     s = sig.copy()
     s["direction"] = np.where(s.or_close > s.or_open, 1,
                               np.where(s.or_close < s.or_open, -1, 0))
@@ -234,7 +260,14 @@ def build_plan(sig: pd.DataFrame, cfg: ORBConfig,
     if s.empty:
         return s
 
-    s["risk_per_share"] = cfg.stop_atr_frac * s.atr
+    if stop_source == "iv" and "iv_move" in s.columns and s["iv_move"].notna().any():
+        from iv import iv_stop_scale
+        scale = iv_stop_scale(s["iv_move"], s["atr"])
+        basis = (s["iv_move"] * scale).where(s["iv_move"].notna(), s["atr"])
+        s["stop_basis"], s["iv_scale"] = basis, scale
+    else:
+        s["stop_basis"], s["iv_scale"] = s["atr"], np.nan
+    s["risk_per_share"] = cfg.stop_atr_frac * s["stop_basis"]
     s["entry"] = np.where(s.direction == 1, s.or_high, s.or_low)
     s["stop"] = s.entry - s.direction * s.risk_per_share
     s["shares"] = np.floor(cfg.risk_per_trade * prof.capital / s.risk_per_share)
@@ -349,6 +382,24 @@ def cmd_enter(args) -> None:
         PLAN_DIR.mkdir(parents=True, exist_ok=True)
         plan.to_csv(PLAN_DIR / f"plan_{sess}.csv", index=False)
         append_or_history(sig.set_index(["date", "symbol"]))
+
+        # Shadow book: identical signals, stop sized from implied volatility
+        # instead of trailing ATR. Deliberately NOT placed — two books cannot
+        # hold conflicting stops on the same symbol in one account without
+        # netting into a single position and corrupting the live book. An ORB
+        # outcome is fully determined by entry/stop/exit prices, so simulating
+        # the shadow from the same bars is exact, not an approximation.
+        shadow = build_plan(sig, cfg, prof, stop_source="iv")
+        if len(shadow):
+            shadow.to_csv(PLAN_DIR / f"shadow_iv_{sess}.csv", index=False)
+            sc = shadow["iv_scale"].dropna()
+            print(f"\nshadow book (IV-sized stops): {len(shadow)} positions, "
+                  f"median stop ${shadow.risk_per_share.median():.2f} "
+                  f"vs ${plan.risk_per_share.median():.2f} on the live book"
+                  + (f" [IV rescaled x{sc.iloc[0]:.2f}]" if len(sc) else ""))
+            moved = set(shadow.symbol) ^ set(plan.symbol)
+            if moved:
+                print(f"  different names selected: {' '.join(sorted(moved))}")
 
         if not args.place:
             print("\nDRY RUN — nothing submitted. Re-run with --place to send.")
