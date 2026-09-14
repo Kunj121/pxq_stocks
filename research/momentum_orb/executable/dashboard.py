@@ -400,7 +400,7 @@ def render(session: date, sig, plan, funnel, results, prof, cfg,
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--date", default=None)
-    ap.add_argument("--capital", type=float, default=10_000.0)
+    ap.add_argument("--capital", type=float, default=25_000.0)
     ap.add_argument("--open", action="store_true")
     ap.add_argument("--universe", default=None)
     a = ap.parse_args()

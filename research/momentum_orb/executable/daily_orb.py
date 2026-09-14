@@ -13,7 +13,9 @@ The Alpaca paper account has $94k and 4x margin. Trading it as-is would prove
 nothing about what this strategy does in the account that would actually run it.
 So every Robinhood constraint is imposed on top:
 
-    capital           $10,000, not the paper account's balance
+    capital           $25,000, not the paper account's balance. Matches the
+                      paper's starting AUM, and wastes less on whole-share
+                      quantization than $10k did (12.4% -> 13.3% IRR).
     leverage          1x. The replication found 1x has the BETTER Sharpe
                       (2.48 vs 1.96) - leverage bought return, not edge.
     commission        $0
@@ -70,7 +72,7 @@ log = logging.getLogger("orb.daily")
 @dataclass(frozen=True)
 class RobinhoodProfile:
     """The constraints of the account this is a proxy for."""
-    capital: float = 10_000.0
+    capital: float = 25_000.0
     max_leverage: float = 1.0
     commission_per_share: float = 0.0
     whole_shares_only: bool = True
@@ -459,7 +461,7 @@ def cmd_report(args) -> None:
 
 def main() -> None:
     p = argparse.ArgumentParser(description=__doc__.split("\n")[0])
-    p.add_argument("--capital", type=float, default=10_000.0,
+    p.add_argument("--capital", type=float, default=25_000.0,
                    help="sizing basis, NOT the paper account balance")
     p.add_argument("--date", default=None, help="YYYY-MM-DD (default: today ET)")
     p.add_argument("--long-only", action="store_true")
