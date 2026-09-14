@@ -160,6 +160,32 @@ If one assumption moves the headline by more than the effect you are testing, it
 a sensitivity — it *is* the result, and the paper's number cannot be confirmed or denied
 until it is pinned down.
 
+### The same trap in operational parameters
+
+This is not confined to fill logic. Any parameter chosen for "safety margin" deserves the
+same treatment, because a margin has a price and the price is rarely zero.
+
+Going live with the ORB, the entry job was scheduled two minutes after the opening range
+closed — padding for data-feed lag, which sounded prudent. Measuring the cost afterwards:
+
+    trigger window   share of trades   mean R
+    09:35-09:36           44.1%        +0.291
+    09:36-09:37           11.0%        +0.234
+    after 09:50           18.6%        +0.066
+
+By the scheduled time, 55% of breakouts had already fired, and the early ones carried
+**73.5% of total profit**. The two-minute cushion was quietly forfeiting most of the
+edge — and a resting stop order that arrives after price has crossed its trigger is not a
+stop order, it is a market order at whatever price has already run to.
+
+The fix was not a better guess at the delay. It was to fire at the earliest legitimate
+moment and **block until the data is actually there**, so the wait is as short as reality
+allows rather than as long as caution imagines.
+
+> Before accepting any safety margin — in a fill rule, a schedule, a lookback, a
+> threshold — compute what it costs. "Conservative" is a claim about a number, and until
+> you have the number it is only a feeling.
+
 Other fill assumptions worth stating: a stop order whose bar *opens* through the trigger
 fills at the open, not the trigger; exits at the last bar's close, not a closing auction
 print.
