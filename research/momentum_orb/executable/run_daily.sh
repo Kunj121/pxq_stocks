@@ -3,7 +3,8 @@
 #
 #   ./run_daily.sh enter     # 09:35-09:45 ET
 #   ./run_daily.sh flatten   # 15:50-16:00 ET
-#   ./run_daily.sh report    # after the close
+#   ./run_daily.sh report    # after the close (also rebuilds the dashboard)
+#   ./run_daily.sh dashboard # rebuild the dashboard on demand
 #
 # Each phase self-guards on the Eastern-time clock, so the cron entry can be
 # written in local time without DST arithmetic: if the wall clock drifts out of
@@ -53,11 +54,20 @@ case "$PHASE" in
   report)
     say "report"
     "$PY" "$RUNNER" report 2>&1 | tee -a "$LOG"
+    # Rebuild the dashboard last, so it reflects the completed session.
+    say "dashboard"
+    "$PY" "$REPO/research/momentum_orb/executable/dashboard.py" 2>&1 | tee -a "$LOG"
+    ;;
+  dashboard)
+    # shift past the phase name so extra flags (--date, --open) pass through
+    # without empty positionals reaching argparse.
+    shift
+    "$PY" "$REPO/research/momentum_orb/executable/dashboard.py" "$@" 2>&1 | tee -a "$LOG"
     ;;
   status)
     "$PY" "$RUNNER" status 2>&1 | tee -a "$LOG"
     ;;
   *)
-    echo "usage: $0 {enter|flatten|report|status}" >&2; exit 2
+    echo "usage: $0 {enter|flatten|report|dashboard|status}" >&2; exit 2
     ;;
 esac
