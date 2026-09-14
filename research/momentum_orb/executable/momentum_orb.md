@@ -263,10 +263,37 @@ validated against — the failure mode that matters most here:
 After both fixes the live plan reproduces the backtest's top-20 selection and
 ordering exactly.
 
-### Scheduling
+### Scheduling — LIVE
 
-`crontab.example` is written but **not installed**. It arms with `ORB_PLACE=1`;
-leave it at `0` and every run is a dry run that logs the plan without trading.
+**This is armed and running.** The crontab is installed with `ORB_PLACE=1`, so
+paper orders are submitted unattended every weekday:
+
+| Local (CT) | ET | Phase |
+|---|---|---|
+| 08:35 | 09:35 | `enter` — waits for the opening-range bars, then submits bracket stop orders |
+| 08:45 | 09:45 | `healthcheck.sh` — did it actually run? desktop notification either way |
+| 14:56 | 15:56 | `flatten` — cancel resting orders, close everything at market |
+| 15:10 | 16:10 | `report` — fills vs plan, then rebuild the dashboard |
+
+To disarm: set `ORB_PLACE=0` in the crontab. Every phase becomes a dry run that
+logs the plan and trades nothing.
+
+Entry fires at 09:35, not later, and blocks until the bars are queryable. That is
+load-bearing: 44% of breakouts trigger within 60 seconds of the range closing and
+trades firing inside two minutes carry 73.5% of total profit, so a padded
+schedule forfeits most of the edge. See the timing section of
+[`backtesting-a-paper`](../../../.claude/skills/backtesting-a-paper/SKILL.md).
+
+Sizing is **$25,000** at 1×, long+short, whole shares, $0 commission, on the
+30-name rule-selected universe (`universe_live.csv`).
+
+A **shadow book** with IV-sized stops is computed alongside each morning and
+written to `execution/logs/orb_plans/shadow_iv_<date>.csv`. It is never placed —
+two books cannot hold conflicting stops on one symbol in a single account — and
+the dashboard compares the two outcomes daily.
+
+The one remaining failure mode: cron does not fire if the Mac is asleep at 08:35.
+The 08:45 healthcheck reports that as `DID NOT RUN` once the machine wakes.
 
 ---
 
