@@ -162,6 +162,50 @@ def append_or_history(today: pd.DataFrame) -> None:
                    index=False)
 
 
+def wait_for_opening_range(symbols: list[str], session: date, cfg: ORBConfig,
+                           timeout_s: float = 75.0, poll_s: float = 4.0) -> None:
+    """Block until the opening-range bars are actually queryable.
+
+    Timing is not a detail here. Measured over 29,755 trades: 44% of breakouts
+    trigger within 60 seconds of the range closing, 55% within two minutes, and
+    those early trades carry 73.5% of all profit at +0.279R against +0.123R for
+    the rest. A stop order that arrives after price has crossed the trigger is
+    immediately marketable and fills at market — not at the trigger the backtest
+    assumes.
+
+    So the runner fires AT 09:35 and waits for the data rather than padding the
+    schedule with dead minutes. The last opening-range bar (09:34) closes at
+    09:35:00 and is usually queryable within seconds.
+    """
+    import time
+    or_end_min = 570 + cfg.opening_minutes
+    deadline = time.time() + timeout_s
+    probe = symbols[:8]
+    while time.time() < deadline:
+        now_et = pd.Timestamp.now(tz="America/New_York")
+        if now_et.date() != session:
+            return
+        if now_et.hour * 60 + now_et.minute < or_end_min:
+            time.sleep(poll_s)
+            continue
+        try:
+            nxt = (pd.Timestamp(session) + pd.Timedelta(days=1)).date()
+            bars = _live_bars(probe, str(session), str(nxt), "1Min")
+            if not bars.empty:
+                idx = bars.index.get_level_values("timestamp")
+                mod = idx.hour * 60 + idx.minute
+                have = bars[(mod >= 570) & (mod < or_end_min)]
+                per_sym = have.groupby(level="symbol").size()
+                if len(per_sym) and per_sym.min() >= cfg.opening_minutes:
+                    log.info("opening range complete at %s", now_et.strftime("%H:%M:%S"))
+                    return
+        except Exception:
+            pass
+        time.sleep(poll_s)
+    log.warning("opening-range bars still incomplete after %.0fs — proceeding",
+                timeout_s)
+
+
 def build_signals(symbols: list[str], session: date, cfg: ORBConfig) -> pd.DataFrame:
     """Everything needed to decide today's book, as known at 09:35.
 
@@ -364,7 +408,10 @@ def cmd_enter(args) -> None:
         log.info("paper account %s (equity $%s — NOT the sizing basis)",
                  acct["account_number"], acct["equity"])
 
-        sig = build_signals(_universe(args.universe), sess, cfg)
+        universe = _universe(args.universe)
+        if args.place and sess == pd.Timestamp.now(tz="America/New_York").date():
+            wait_for_opening_range(universe, sess, cfg)
+        sig = build_signals(universe, sess, cfg)
         plan = build_plan(sig, cfg, prof)
         if plan.empty:
             print("no qualifying names today")

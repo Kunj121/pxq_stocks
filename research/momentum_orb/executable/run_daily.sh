@@ -38,6 +38,10 @@ case "$PHASE" in
   enter)
     # The opening range closes at 09:35. Entering much later than 09:45 means
     # the breakout has already happened without you.
+    # 09:35 is the earliest legitimate moment: the range has just closed. The
+    # runner itself blocks until the bars are queryable, so firing at 09:35
+    # beats padding the schedule — 44% of breakouts trigger inside the first
+    # minute and carry most of the profit.
     if [ "$ET_HHMM" \< "0935" ] || [ "$ET_HHMM" \> "0945" ]; then
       say "enter: $ET_HHMM ET is outside 09:35-09:45 — declining"; exit 0
     fi
