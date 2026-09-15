@@ -80,7 +80,7 @@ but you get half as many days. Optimise for the dollars.
 | Direction | long + short | **long only** | cash account; costs ~$60/yr |
 | Max leverage | 4× | **1×** | unavailable, and Sharpe is better without it |
 | Risk per trade | 1% of equity | **1% nominal** | the 1× cap scales it to ~0.02% realized |
-| Stop | 10% × ATR(14) | **10% × ATR(14)** | unchanged |
+| Stop | 10% × ATR(14) | **8–10% × ATR(14), floor $0.12** | tuned; see below |
 | Profit target | none, exit 16:00 | **none, exit 15:55** | leave margin before the close |
 | Universe | 100 names | **top 20 by RelVol** from a live screen | unchanged |
 | Starting capital | $25,000 | **$10,000** | what is available |
@@ -321,7 +321,56 @@ you: a late run stands down instead of entering hours after the range closed.
 
 ---
 
-## 9. Honest summary
+## 9. The stop width is tuned, and not the paper's
+
+A sweep over 29,370 selected trades, sizing each width to the same 1% risk so
+only win-rate-against-payoff is under test:
+
+| stop | stopped | win | mean R | med $ stop | IRR | Sharpe | MDD | net @1c |
+|---|---|---|---|---|---|---|---|---|
+| 5% | 89.8% | 10.0% | +0.441 | $0.09 | 15.0% | 3.71 | 2.3% | $2,559 |
+| **8%** | 86.2% | 13.4% | +0.285 | $0.13 | 13.8% | 2.81 | 3.9% | $2,006 |
+| **10%** (paper) | 82.7% | 16.7% | +0.208 | $0.18 | 13.1% | 2.46 | 6.8% | $1,644 |
+| 20% | 68.6% | 28.5% | +0.090 | $0.36 | 10.1% | 1.51 | 12.7% | $466 |
+| 50% | 35.3% | 45.3% | +0.025 | $0.90 | 6.6% | 0.79 | 20.6% | −$667 |
+| 100% | 9.5% | 49.5% | +0.012 | $1.79 | 6.0% | 0.67 | 23.4% | −$875 |
+
+Every column improves monotonically as the stop tightens — including drawdown,
+which is counter-intuitive until you notice the win rate is the thing getting
+worse. **Do not read that as "tighter is always better."** At 5% the median stop
+is nine cents, at or inside the bid-ask spread on many of these names, and the
+backtest decides stop-outs from 1-minute bar lows, which cannot see the bounce
+that would trigger it in reality. The monotonic run toward the edge of what the
+data can resolve is the signature of an artefact.
+
+So the live rule takes the tighter end of the defensible range and widens only
+where the dollars get too thin:
+
+    stop = min(10% x ATR, max(8% x ATR, $0.12))
+
+| rule | IRR | Sharpe | MDD | net @1c |
+|---|---|---|---|---|
+| fixed 10% (paper) | 13.1% | 2.46 | 6.8% | $1,644 |
+| fixed 8% | 13.8% | 2.81 | 3.9% | $2,006 |
+| **flex 8–10%, floor $0.12** | **14.0%** | 2.76 | **4.0%** | **$2,287** |
+
+Roughly 30% of trades widen. Note the floor is a target, not a guarantee: on a
+low-ATR name the 10% ceiling can sit below $0.12, and the ceiling wins — a quiet
+stock never gets a stop wider than a tenth of its own daily range.
+
+`ORBConfig` still defaults to the paper's fixed 10% so every replication result
+stays comparable; the band is applied by `live_config()` in `daily_orb.py` only.
+
+Also tested and rejected: **removing the stop entirely.** Win rate jumps 17.6% →
+49.4% and it feels far better, but mean R halves and the worst trade goes from
+−1.0R to **−143R**. Sharpe 2.48 → 0.78, drawdown 6.4% → 19.5%. One unbounded
+loser erases a hundred winners. This independently reproduces Wu et al. (2021),
+cited by the paper: profit targets hurt ORB, stop losses help.
+
+
+---
+
+## 10. Honest summary
 
 The edge replicates. The 5-minute ORB on high-relative-volume names produced a
 monotonic PnL-vs-RelVol relationship on independent data, from a different vendor,

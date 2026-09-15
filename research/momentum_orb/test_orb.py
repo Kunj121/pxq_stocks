@@ -199,3 +199,60 @@ def test_day_without_an_0930_bar_is_skipped():
                                 (4, 100.5, 102, 100, 101.5, 500)]),
                           atr(1.0), ORBConfig(opening_minutes=1))
     assert out.empty
+
+
+# --- flexible stop band ----------------------------------------------------
+
+def test_default_stop_is_fixed_at_the_papers_ten_percent():
+    """Replication fidelity: with no band configured the stop must be exactly
+    10% of ATR, so every published comparison stays valid."""
+    cfg = ORBConfig()
+    assert cfg.stop_distance(2.0) == pytest.approx(0.20)
+    assert cfg.stop_distance(0.6) == pytest.approx(0.06)
+
+
+def test_band_uses_the_tight_end_when_dollars_allow():
+    cfg = ORBConfig(stop_atr_frac=0.08, stop_atr_frac_max=0.10,
+                    min_stop_dollars=0.12)
+    # 8% of $5.00 = $0.40, comfortably above the floor -> stays tight
+    assert cfg.stop_distance(5.0) == pytest.approx(0.40)
+
+
+def test_band_widens_toward_the_floor_but_the_ceiling_always_wins():
+    """The dollar floor is a target, not a guarantee. On a low-ATR name the
+    ceiling can sit below the floor, and the ceiling must win — otherwise a
+    quiet stock would get a stop far wider than its own daily range."""
+    cfg = ORBConfig(stop_atr_frac=0.08, stop_atr_frac_max=0.10,
+                    min_stop_dollars=0.12)
+    # 8% of $2.00 = $0.16, already over the floor -> untouched
+    assert cfg.stop_distance(2.00) == pytest.approx(0.16)
+    # 8% of $1.75 = $0.14 -> still over the floor
+    assert cfg.stop_distance(1.75) == pytest.approx(0.14)
+    # 8% of $1.00 = $0.08 is under the floor, but 10% caps at $0.10 < $0.12
+    assert cfg.stop_distance(1.00) == pytest.approx(0.10)
+    # 8% of $0.60 = $0.048; ceiling $0.06 again below the floor
+    assert cfg.stop_distance(0.60) == pytest.approx(0.06)
+
+
+def test_band_reaches_the_floor_when_the_ceiling_permits():
+    """ATR high enough that 10% clears the floor but 8% does not."""
+    cfg = ORBConfig(stop_atr_frac=0.08, stop_atr_frac_max=0.10,
+                    min_stop_dollars=0.12)
+    # 8% of $1.40 = $0.112 (under), 10% = $0.14 (over) -> lands exactly on $0.12
+    assert cfg.stop_distance(1.40) == pytest.approx(0.12)
+
+
+def test_band_never_exceeds_the_ceiling_fraction():
+    cfg = ORBConfig(stop_atr_frac=0.08, stop_atr_frac_max=0.10,
+                    min_stop_dollars=10.0)   # absurd floor
+    for atr in (0.5, 1.0, 5.0, 50.0):
+        assert cfg.stop_distance(atr) <= 0.10 * atr + 1e-12
+
+
+def test_band_is_vectorised():
+    import numpy as _np
+    cfg = ORBConfig(stop_atr_frac=0.08, stop_atr_frac_max=0.10,
+                    min_stop_dollars=0.12)
+    out = cfg.stop_distance(_np.array([5.0, 1.40, 1.00, 0.60]))
+    #            tight      floor      ceiling    ceiling
+    assert _np.allclose(out, [0.40, 0.12, 0.10, 0.06])

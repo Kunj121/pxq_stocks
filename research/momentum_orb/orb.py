@@ -55,7 +55,19 @@ class ORBConfig:
     top_n: int | None = 20               # None disables -> trade every qualifier
 
     # risk
+    #
+    # `stop_atr_frac` alone reproduces the paper (10% of ATR) and is the default,
+    # so every replication result stays comparable. The live runner overrides it
+    # with a FLEXIBLE band — see `stop_distance`.
     stop_atr_frac: float = 0.10
+    #: Upper bound when widening. None = fixed width, the paper's rule.
+    stop_atr_frac_max: float | None = None
+    #: Dollar floor below which a stop is bid-ask noise rather than a level.
+    #: A sweep over 29,370 trades favours tighter stops monotonically down to 5%,
+    #: but a 5% stop is a median 9 cents — at or inside the spread on many names,
+    #: where 1-minute bar lows cannot see the bounce that would trigger it. So
+    #: take the tighter end and widen only where the dollars get too thin.
+    min_stop_dollars: float = 0.0
     risk_per_trade: float = 0.01
     max_leverage: float = 4.0
 
@@ -77,6 +89,20 @@ class ORBConfig:
     #                 "certain" by construction — kept as an explicit name so the
     #                 bracket reads as a bracket.
     same_bar_policy: str = "certain"
+
+    def stop_distance(self, atr):
+        """Dollar stop distance for a given ATR (scalar or array).
+
+        Fixed at `stop_atr_frac` unless a band is configured, in which case the
+        stop widens toward `stop_atr_frac_max` only where the base width falls
+        below `min_stop_dollars`.
+        """
+        import numpy as _np
+        base = self.stop_atr_frac * atr
+        if self.stop_atr_frac_max is None or self.min_stop_dollars <= 0:
+            return base
+        ceiling = self.stop_atr_frac_max * atr
+        return _np.minimum(ceiling, _np.maximum(base, self.min_stop_dollars))
 
     @property
     def label(self) -> str:
@@ -236,7 +262,7 @@ def simulate_symbol(minutes: pd.DataFrame, atr_by_date: pd.Series,
         else:
             entry = min(trigger, do[k])
 
-        risk = cfg.stop_atr_frac * atr
+        risk = float(cfg.stop_distance(atr))
         stop = entry - direction * risk
 
         # Bars strictly after the entry bar: unambiguously post-entry.

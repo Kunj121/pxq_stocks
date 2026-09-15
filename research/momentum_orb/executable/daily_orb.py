@@ -311,7 +311,7 @@ def build_plan(sig: pd.DataFrame, cfg: ORBConfig, prof: RobinhoodProfile,
         s["stop_basis"], s["iv_scale"] = basis, scale
     else:
         s["stop_basis"], s["iv_scale"] = s["atr"], np.nan
-    s["risk_per_share"] = cfg.stop_atr_frac * s["stop_basis"]
+    s["risk_per_share"] = cfg.stop_distance(s["stop_basis"])
     s["entry"] = np.where(s.direction == 1, s.or_high, s.or_low)
     s["stop"] = s.entry - s.direction * s.risk_per_share
     s["shares"] = np.floor(cfg.risk_per_trade * prof.capital / s.risk_per_share)
@@ -335,6 +335,19 @@ def build_plan(sig: pd.DataFrame, cfg: ORBConfig, prof: RobinhoodProfile,
 # --------------------------------------------------------------------------- #
 
 DEFAULT_UNIVERSE = HERE / "universe_live.csv"
+
+
+#: The live stop rule, tuned on 29,370 trades and deliberately NOT the paper's.
+#: 8% of ATR beats 10% (IRR 13.8% vs 13.1%, Sharpe 2.81 vs 2.46, drawdown 3.9%
+#: vs 6.8%), and widening to 10% only where 8% would fall under 12 cents beats
+#: both — $2,287/yr net of a penny of slippage against $1,644 for the paper's
+#: fixed 10%. Roughly 30% of trades widen. The research default in orb.py stays
+#: at the paper's 10% so replication results remain comparable.
+LIVE_STOP = dict(stop_atr_frac=0.08, stop_atr_frac_max=0.10, min_stop_dollars=0.12)
+
+
+def live_config(**kw) -> ORBConfig:
+    return ORBConfig(**{**LIVE_STOP, **kw})
 
 
 def _universe(path: str | None = None) -> list[str]:
@@ -384,7 +397,7 @@ def cmd_build_history(args) -> None:
     Slow by design — it reads the full-history cache once so that every later
     run needs only one small live request.
     """
-    cfg = ORBConfig()
+    cfg = live_config()
     syms = _universe(args.universe)
     end = _session(args)
     start = (pd.Timestamp(end) - pd.Timedelta(days=args.days)).date()
@@ -408,7 +421,7 @@ def cmd_build_history(args) -> None:
 
 
 def cmd_screen(args) -> None:
-    cfg, prof = ORBConfig(), RobinhoodProfile(capital=args.capital)
+    cfg, prof = live_config(), RobinhoodProfile(capital=args.capital)
     sess = _session(args)
     sig = build_signals(_universe(args.universe), sess, cfg)
     ok = sig[(sig.day_open > cfg.min_price) & (sig.avg_volume >= cfg.min_avg_volume)
@@ -422,7 +435,7 @@ def cmd_screen(args) -> None:
 def cmd_enter(args) -> None:
     if args.place and not guard_window("enter"):
         return
-    cfg = ORBConfig()
+    cfg = live_config()
     prof = RobinhoodProfile(capital=args.capital, allow_short=not args.long_only)
     sess = _session(args)
     log.info("profile: %s", prof.describe())
