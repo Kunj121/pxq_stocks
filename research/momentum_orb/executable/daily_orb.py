@@ -351,6 +351,28 @@ def _universe(path: str | None = None) -> list[str]:
     return pd.read_csv(f)["symbol"].tolist()
 
 
+# Windows each phase may act in, Eastern time. These live here rather than in a
+# shell wrapper because macOS TCC blocks cron from reading anything under
+# ~/Downloads — scheduling is done by launchd calling this file directly, so a
+# bash guard would never run. See executable/momentum_orb.md.
+PHASE_WINDOWS = {"enter": (935, 945), "flatten": (1545, 1600)}
+
+
+def guard_window(phase: str) -> bool:
+    """True if now is inside `phase`'s Eastern-time window, on a weekday."""
+    now = pd.Timestamp.now(tz="America/New_York")
+    if now.weekday() > 4:
+        log.info("%s: weekend — standing down", phase)
+        return False
+    lo, hi = PHASE_WINDOWS.get(phase, (0, 2400))
+    hhmm = now.hour * 100 + now.minute
+    if not (lo <= hhmm <= hi):
+        log.info("%s: %s ET is outside %04d-%04d — standing down",
+                 phase, now.strftime("%H:%M"), lo, hi)
+        return False
+    return True
+
+
 def _session(args) -> date:
     return pd.Timestamp(args.date).date() if args.date else pd.Timestamp.now(
         tz="America/New_York").date()
@@ -398,6 +420,8 @@ def cmd_screen(args) -> None:
 
 
 def cmd_enter(args) -> None:
+    if args.place and not guard_window("enter"):
+        return
     cfg = ORBConfig()
     prof = RobinhoodProfile(capital=args.capital, allow_short=not args.long_only)
     sess = _session(args)
@@ -498,6 +522,8 @@ def cmd_status(args) -> None:
 
 
 def cmd_flatten(args) -> None:
+    if args.place and not guard_window("flatten"):
+        return
     prof = RobinhoodProfile()
     with PaperBroker() as b:
         b.assert_paper()
@@ -555,6 +581,18 @@ def cmd_report(args) -> None:
     LOG_DIR.mkdir(parents=True, exist_ok=True)
     df.to_csv(FILL_LOG, mode="a", header=not FILL_LOG.exists(), index=False)
     print(f"-> appended to {FILL_LOG}")
+    _rebuild_dashboard(sess)
+
+
+def _rebuild_dashboard(sess) -> None:
+    """Rebuild the dashboard in-process. launchd runs one command per agent, so
+    chaining `report && dashboard` in a shell is not available to us."""
+    try:
+        import subprocess
+        subprocess.run([sys.executable, str(HERE / "dashboard.py"),
+                        "--date", str(sess)], check=False, timeout=900)
+    except Exception as exc:
+        log.warning("dashboard rebuild failed: %s", exc)
 
 
 def main() -> None:

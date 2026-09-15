@@ -263,28 +263,50 @@ validated against — the failure mode that matters most here:
 After both fixes the live plan reproduces the backtest's top-20 selection and
 ordering exactly.
 
-### Scheduling — LIVE
+### Scheduling — LIVE, via launchd (NOT cron)
 
-**This is armed and running.** The crontab is installed with `ORB_PLACE=1`, so
-paper orders are submitted unattended every weekday:
+**cron cannot run this, and the reason is worth recording.** `/usr/sbin/cron`
+has no Full Disk Access, and this repo lives under `~/Downloads`, which macOS
+TCC protects. Cron fired correctly at 08:35:00 on 2026-09-15 and got:
 
-| Local (CT) | ET | Phase |
+    /bin/bash: .../executable/run_daily.sh: Operation not permitted
+
+Not a sleep problem, not a crontab problem — the job ran and was refused. It
+failed silently into `/var/mail/$USER`, which is where the diagnosis eventually
+came from. Probing what cron may do:
+
+| action | cron | launchd |
 |---|---|---|
-| 08:35 | 09:35 | `enter` — waits for the opening-range bars, then submits bracket stop orders |
-| 08:45 | 09:45 | `healthcheck.sh` — did it actually run? desktop notification either way |
-| 14:56 | 15:56 | `flatten` — cancel resting orders, close everything at market |
-| 15:10 | 16:10 | `report` — fills vs plan, then rebuild the dashboard |
+| execute a script in `~/orb_bin` | yes | yes |
+| read a file in `~/Downloads` | **no** | no |
+| execute the venv python in `~/Downloads` | **no** | **yes** |
+| run `daily_orb.py` from `~/Downloads` | **no** | **yes** |
 
-To disarm: set `ORB_PLACE=0` in the crontab. Every phase becomes a dry run that
-logs the plan and trades nothing.
+TCC is per-binary, so `/usr/bin/head` is refused where the venv python is not.
+Scheduling is therefore **LaunchAgents invoking the venv python directly** — no
+bash wrapper, because bash is one of the refused binaries.
 
-Entry fires at 09:35, not later, and blocks until the bars are queryable. That is
-load-bearing: 44% of breakouts trigger within 60 seconds of the range closing and
-trades firing inside two minutes carry 73.5% of total profit, so a padded
-schedule forfeits most of the edge. See the timing section of
-[`backtesting-a-paper`](../../../.claude/skills/backtesting-a-paper/SKILL.md).
+| Agent | Local (CT) | ET | Phase |
+|---|---|---|---|
+| `com.orb.enter` | 08:35 | 09:35 | waits for the opening range, submits bracket stop orders |
+| `com.orb.flatten` | 14:56 | 15:56 | cancels resting orders, closes everything at market |
+| `com.orb.report` | 15:10 | 16:10 | fills vs plan, then rebuilds the dashboard in-process |
 
-Sizing is **$25,000** at 1×, long+short, whole shares, $0 commission, on the
+Plists live in `~/Library/LaunchAgents/com.orb.*.plist`; output goes to
+`execution/logs/launchd_<phase>.log`. Manage with:
+
+    launchctl list | grep com.orb
+    launchctl bootout   gui/$UID/com.orb.enter     # disable
+    launchctl bootstrap gui/$UID ~/Library/LaunchAgents/com.orb.enter.plist
+
+The Eastern-time window guard lives in `daily_orb.py` (`guard_window`), not in a
+shell wrapper — launchd calls Python directly, so a bash guard would never run.
+Each placing phase stands down outside its window, verified live.
+
+`run_daily.sh` and `healthcheck.sh` remain for manual use but are no longer
+scheduled; they are bash, which TCC refuses from a scheduler.
+
+Sizing is **$25,000** at 1x, long+short, whole shares, $0 commission, on the
 30-name rule-selected universe (`universe_live.csv`).
 
 A **shadow book** with IV-sized stops is computed alongside each morning and
@@ -292,8 +314,10 @@ written to `execution/logs/orb_plans/shadow_iv_<date>.csv`. It is never placed �
 two books cannot hold conflicting stops on one symbol in a single account — and
 the dashboard compares the two outcomes daily.
 
-The one remaining failure mode: cron does not fire if the Mac is asleep at 08:35.
-The 08:45 healthcheck reports that as `DID NOT RUN` once the machine wakes.
+The remaining failure mode: launchd does not fire if the Mac is asleep at 08:35.
+Unlike cron, launchd runs a missed StartCalendarInterval job once on wake — which
+for this strategy is worse than skipping, so the window guard is what protects
+you: a late run stands down instead of entering hours after the range closed.
 
 ---
 
