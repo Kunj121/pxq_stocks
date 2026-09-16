@@ -337,13 +337,22 @@ def build_plan(sig: pd.DataFrame, cfg: ORBConfig, prof: RobinhoodProfile,
 DEFAULT_UNIVERSE = HERE / "universe_live.csv"
 
 
-#: The live stop rule, tuned on 29,370 trades and deliberately NOT the paper's.
-#: 8% of ATR beats 10% (IRR 13.8% vs 13.1%, Sharpe 2.81 vs 2.46, drawdown 3.9%
-#: vs 6.8%), and widening to 10% only where 8% would fall under 12 cents beats
-#: both — $2,287/yr net of a penny of slippage against $1,644 for the paper's
-#: fixed 10%. Roughly 30% of trades widen. The research default in orb.py stays
-#: at the paper's 10% so replication results remain comparable.
-LIVE_STOP = dict(stop_atr_frac=0.08, stop_atr_frac_max=0.10, min_stop_dollars=0.12)
+#: The live stop is the paper's fixed 10% of ATR — deliberately untuned.
+#:
+#: A width sweep on 2016-2023 favoured a flexible 8-10% band, which beat the
+#: paper by $643/yr net of slippage. Out of sample (30 rule-selected names,
+#: 2025-03..2026-09, 2,446 trades) the same band beat the paper by $65/yr and
+#: ranked 4th of 5 widths. An improvement that shrinks by 90% out of sample is
+#: overfitting, not an edge, so the tuning is reverted.
+#:
+#: Note what the data actually keeps saying: 5% of ATR won BOTH samples, by a
+#: wide margin and with the lowest drawdown. It is rejected on a mechanism the
+#: backtest cannot see — a 5% stop is a median 9 cents, at or inside the spread
+#: on many of these names, and stop-outs are decided from 1-minute bar lows that
+#: do not capture bid-ask bounce. That objection is untestable without real
+#: fills, so this is a judgement call overriding two samples of evidence, and it
+#: is recorded as such rather than buried.
+LIVE_STOP = dict(stop_atr_frac=0.10)
 
 
 def live_config(**kw) -> ORBConfig:
