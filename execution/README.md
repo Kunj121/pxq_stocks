@@ -77,6 +77,8 @@ role Python has in execution.
 | `PROTOCOL.md` | The exact MCP tool sequence for equity and option orders. Read before every trade. |
 | `guardrails.py` | Local pre-flight check: notional cap, daily order count, live-order kill switch. |
 | `journal.py` | Append-only trade journal at `logs/trades.jsonl` + `logs/trades.csv`. |
+| `slack.py` | Posts run verdicts and files to a Slack channel. Stdlib only. |
+| `test_slack.py` | Tests for the above. No network — `urlopen` is stubbed. |
 | `logs/` | Journal output. Gitignored — trading records stay local. |
 
 ### Journal output
@@ -174,6 +176,86 @@ know about them, so they only bind if the protocol in `PROTOCOL.md` is actually 
 `ALLOW_LIVE_ORDERS=false` is the default and the safe state. It is a dry-run switch for
 the local layer; it does **not** disable the MCP tools themselves, which is why rule 2 in
 `PROTOCOL.md` (explicit human confirmation) is the real backstop.
+
+---
+
+## Slack notifications
+
+`slack.py` posts messages and files to a Slack channel. It is standalone: no
+other module in this repo imports it, and nothing calls it on a schedule. Wire
+it into whatever you want reported, or use it from the shell.
+
+**This does not breach the no-network rule above.** That rule governs *market*
+data and order flow, which stay on the MCP path. `slack.py` is an outbound
+notification sink: it reads no prices, reaches no broker, and nothing it
+returns may be fed back into an order. Keep it that way — if a number is worth
+posting to Slack, it was already fetched from MCP somewhere upstream.
+
+### Two transports
+
+| | Webhook | Bot token |
+|---|---|---|
+| Env var | `SLACK_WEBHOOK_URL` | `SLACK_BOT_TOKEN` |
+| Scopes needed | none | `chat:write` |
+| Channel | fixed at creation | any, via `SLACK_CHANNEL` |
+| Upload files | no | yes, with `files:write` |
+| Thread replies | no | yes |
+
+`post()` prefers the webhook whenever one is set and the call names neither a
+channel nor a thread, because that path cannot fail on a missing scope. Calls
+the webhook cannot serve fall through to the token and say so if it is absent.
+
+**Prefer the webhook unless you need a second channel or file uploads.** It is
+one URL, it needs no scopes, no install, and no invite.
+
+### Setup — webhook
+
+api.slack.com/apps -> your app -> *Incoming Webhooks* -> add one, pick the
+channel, copy the URL into `.env` as `SLACK_WEBHOOK_URL`. That is the whole
+setup. The URL is a credential: anyone holding it can post to that channel.
+
+### Setup — bot token
+
+1. **OAuth & Permissions.** Under *Bot Token Scopes* add `chat:write`. Add
+   `files:write` only for `upload()`, and `channels:read` only if you want to
+   name an upload target `#like-this` instead of by its `C…` id.
+2. **Install to the workspace** and copy the *Bot* User OAuth Token (`xoxb-…`).
+   The user token (`xoxp-…`) posts as you rather than as the bot.
+3. **Put it in `.env`** (gitignored) as `SLACK_BOT_TOKEN`, with `SLACK_CHANNEL`.
+4. **Invite the bot to the channel**: `/invite @your-bot-name`.
+
+Two failures worth recognising on sight. `not_in_channel` means step 4 was
+skipped — the token is fine, the bot simply is not in the room. `missing_scope`
+means the scope was added but the app was **not reinstalled**; a scope granted
+after install does nothing until you reinstall, and the existing token keeps
+whatever it was issued with.
+
+### Use
+
+```bash
+python execution/slack.py --check                 # inspect the configured transport
+python execution/slack.py "nightly refresh finished"
+python execution/slack.py --file out/some_report.html --title "Report"
+```
+
+```python
+from execution.slack import notify, Slack
+
+notify("DONE", "nightly refresh finished")       # returns False on failure
+Slack().post("something worth reading")          # raises SlackError instead
+```
+
+Use `notify()` from anything unattended and `Slack()` from anything you are
+watching. The difference is deliberate: `notify()` swallows every failure, so a
+Slack outage cannot take down the job it is reporting on, while `Slack()` raises
+so an interactive mistake is not silent.
+
+### Failure behavior
+
+Slack answers a *rejected* call with HTTP 200 and `{"ok": false}`, so success is
+read from the `ok` field, never from the status code. Rate limits (429) retry up
+to three times against `Retry-After` and then give up rather than blocking the
+caller indefinitely.
 
 ---
 

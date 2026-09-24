@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Golden-sweep watcher. NOT installed by default — see research/quantdata/README.md.
+
+      cp research/quantdata/com.pxq.sweepalerts.plist ~/Library/LaunchAgents/
+      launchctl load ~/Library/LaunchAgents/com.pxq.sweepalerts.plist   # arm
+      launchctl unload ~/Library/LaunchAgents/com.pxq.sweepalerts.plist # pause
+
+  The venv python is invoked directly rather than through a shell script: macOS
+  TCC refuses /bin/bash from a scheduler when the script lives under ~/Downloads,
+  but it will run this interpreter from there.
+
+  KeepAlive restarts the watcher if it dies. It idles cheaply outside market
+  hours, so it is meant to stay up rather than be scheduled per session.
+-->
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.pxq.sweepalerts</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Users/kunjshah/Downloads/pxq_stocks/.venv/bin/python</string>
+        <string>/Users/kunjshah/Downloads/pxq_stocks/research/quantdata/sweep_alerts.py</string>
+        <string>--interval</string>
+        <string>60</string>
+        <!-- One SNDK contract costs a median $15,544, ~1.6x the next worst
+             name: the print is real but unactionable at any sane size. -->
+        <string>--exclude</string>
+        <string>SNDK</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/kunjshah/Downloads/pxq_stocks</string>
+
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+
+    <key>StandardOutPath</key>
+    <string>/Users/kunjshah/Downloads/pxq_stocks/data/sweep_alerts/watcher.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/kunjshah/Downloads/pxq_stocks/data/sweep_alerts/watcher.err</string>
+</dict>
+</plist>
