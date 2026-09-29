@@ -36,6 +36,10 @@ FASTS = (5, 8, 10, 12, 20, 26, 50)
 SLOWS = (20, 50, 100, 200)
 # how recently the cross must have happened, in sessions; None = state only
 FRESH = (None, 5, 10, 20)
+HEADLINE = "golden + buy-side"
+
+
+BUY_SIDE = ("ASK", "ABOVE_ASK")
 
 
 def load_trades() -> pd.DataFrame:
@@ -45,6 +49,27 @@ def load_trades() -> pd.DataFrame:
     df = df[df.ret.notna()].copy()
     df["session"] = pd.to_datetime(df.session)
     return df.reset_index(drop=True)
+
+
+def aggressor(df: pd.DataFrame) -> pd.DataFrame:
+    """Keep only prints that LIFTED the offer, and read direction off the right.
+
+    A sweep is directional only if you know which side was the aggressor. Lifting
+    the offer is someone paying up to get long the contract, so a call is bullish
+    and a put is bearish. A print at or below the bid is the opposite trade -- a
+    call sold there is bearish -- which is why call/put alone mislabels most of the
+    log. Restricting to the buy side removes the ambiguity rather than modelling it.
+
+    Inside this subset the vendor's own sentiment agrees with the right on every
+    row, so the stored `ret` (which bought `right`) is the trade this rule implies.
+    The assert holds that invariant.
+    """
+    out = df[df.side.isin(BUY_SIDE)].copy()
+    out["direction"] = np.where(out.swept_right.eq("CALL"), "BULL", "BEAR")
+    vendor = out.vendor_sentiment.map({"BULLISH": "BULL", "BEARISH": "BEAR"})
+    assert (out.direction == vendor).all(), "aggressor direction disagrees with the vendor label"
+    assert (out.right == out.swept_right).all(), "traded right is not the swept right"
+    return out.reset_index(drop=True)
 
 
 def load_bars(tickers) -> dict[str, pd.DataFrame]:
@@ -196,6 +221,9 @@ def welch_t(a: np.ndarray, b: np.ndarray) -> float:
 
 
 def run_grid(df: pd.DataFrame, boot: int, rng, label: str) -> pd.DataFrame:
+    # The aggressor rule leaves ~111 trades, so a flat n>=20 would silently delete
+    # most of that grid. Scale the floor instead and report it with the cell.
+    floor = max(8, min(20, len(df) // 12))
     rows = []
     top = df.ticker.value_counts().idxmax()
     ex = df[df.ticker != top]
@@ -211,7 +239,7 @@ def run_grid(df: pd.DataFrame, boot: int, rng, label: str) -> pd.DataFrame:
                 sub = df[valid]
                 m = m[valid]
                 a, b = sub.ret[m].values, sub.ret[~m].values
-                if len(a) < 20 or len(b) < 20:
+                if len(a) < floor or len(b) < floor:
                     continue
                 mx, vx = cell_state(ex, f, s, fresh)
                 exs, mx = ex[vx], mx[vx]
@@ -222,7 +250,7 @@ def run_grid(df: pd.DataFrame, boot: int, rng, label: str) -> pd.DataFrame:
                         population=label, fast=f, slow=s,
                         fresh=-1 if fresh is None else fresh,
                         n_aligned=len(a), n_other=len(b),
-                        n_dropped=int((~valid).sum()),
+                        n_dropped=int((~valid).sum()), floor=floor,
                         mean_aligned=a.mean(), mean_other=b.mean(),
                         diff=a.mean() - b.mean(), t=welch_t(a, b),
                         win_aligned=(a > 0).mean(), win_other=(b > 0).mean(),
@@ -296,10 +324,15 @@ def main() -> None:
     print(f"{len(df):,} trades joined to daily bars   {df.ticker.nunique()} tickers")
     print(f"baseline mean ret {df.ret.mean():+.1%}   median {df.ret.median():+.1%}")
 
-    grids = [run_grid(df, a.boot, rng, "all ISO")]
-    badged = df[df.isGoldenSweep].reset_index(drop=True)
-    if len(badged) > 100:
-        grids.append(run_grid(badged, a.boot, rng, "badged"))
+    buy = aggressor(df)
+    gold = buy[buy.isGoldenSweep].reset_index(drop=True)
+    print(f"buy-side aggressor (ASK/ABOVE_ASK): {len(buy)} trades, "
+          f"{buy.ticker.nunique()} tickers, mean ret {buy.ret.mean():+.1%}")
+    print(f"golden + buy-side (the rule):       {len(gold)} trades, "
+          f"{gold.ticker.nunique()} tickers, mean ret {gold.ret.mean():+.1%}")
+
+    pops = [("golden + buy-side", gold), ("buy-side, all ISO", buy), ("all ISO (reference)", df)]
+    grids = [run_grid(d, a.boot, rng, name) for name, d in pops if len(d) >= 60]
     grid = pd.concat(grids, ignore_index=True)
 
     OUT.mkdir(parents=True, exist_ok=True)
@@ -315,13 +348,13 @@ def main() -> None:
         print(g[cols].head(8).to_string(index=False,
               float_format=lambda v: f"{v:,.3f}"))
 
-    iso = grid[grid.population == "all ISO"]
+    iso = grid[grid.population == HEADLINE]
     print(f"\nbest raw |t| {np.nanmax(np.abs(iso.t.values)):.2f} "
           f"-> best direction-stratified |t| {np.nanmax(np.abs(iso.t_strat.values)):.2f}")
     obs = np.nanmax(np.abs(iso.t_strat.values))
-    print(f"observed max |t_strat| across the all-ISO grid: {obs:.2f}")
+    print(f"observed max |t_strat| across the {HEADLINE} grid: {obs:.2f}")
     if a.perm > 0:
-        _, null = permutation_maxt(df, panel, a.perm, rng)
+        _, null = permutation_maxt(gold, panel, a.perm, rng)
         p = float(np.mean(null >= obs))
         print(f"permutation null max |t_strat|: median {np.nanmedian(null):.2f}  "
               f"95th {np.nanpercentile(null, 95):.2f}  ({a.perm} draws)")
