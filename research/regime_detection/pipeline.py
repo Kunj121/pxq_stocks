@@ -182,9 +182,20 @@ def fit_regimes(
 # -- 2. description ----------------------------------------------------------
 
 
-def regime_stats(frame: pd.DataFrame, labels: pd.Series) -> pd.DataFrame:
-    """Table 4: descriptive statistics per regime, full sample."""
+def regime_stats(
+    frame: pd.DataFrame,
+    labels: pd.Series,
+    periods: int = TRADING_DAYS,
+    momentum: tuple[str, str] = ("Momentum_20D", "Momentum_60D"),
+) -> pd.DataFrame:
+    """Table 4: descriptive statistics per regime, full sample.
+
+    ``periods`` and ``momentum`` exist so the weekly build (52, and its own
+    4W/12W momentum columns) reuses this rather than forking it.  The defaults
+    are the paper's daily ones, so existing callers are unaffected.
+    """
     grouped = frame.assign(regime=labels).groupby("regime")
+    fast, slow = momentum
     out = pd.DataFrame(
         {
             "observations": grouped.size(),
@@ -192,11 +203,11 @@ def regime_stats(frame: pd.DataFrame, labels: pd.Series) -> pd.DataFrame:
             "mean_daily_return": grouped["Return"].mean(),
             "median_daily_return": grouped["Return"].median(),
             "std_daily_return": grouped["Return"].std(),
-            "annualised_volatility": grouped["Return"].std() * np.sqrt(TRADING_DAYS),
+            "annualised_volatility": grouped["Return"].std() * np.sqrt(periods),
             "mean_vix": grouped["VIX"].mean(),
             "mean_drawdown": grouped["Drawdown"].mean(),
-            "mean_momentum_20d": grouped["Momentum_20D"].mean(),
-            "mean_momentum_60d": grouped["Momentum_60D"].mean(),
+            f"mean_momentum_{fast.split('_')[-1].lower()}": grouped[fast].mean(),
+            f"mean_momentum_{slow.split('_')[-1].lower()}": grouped[slow].mean(),
         }
     )
     order = [r for r in (BULL, BEAR) if r in out.index]
