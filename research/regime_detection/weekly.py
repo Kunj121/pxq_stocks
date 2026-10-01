@@ -75,22 +75,48 @@ EXCLUDED: tuple[str, ...] = (
 )
 
 
-def weekly_panel(panel: pd.DataFrame, rule: str = RULE) -> pd.DataFrame:
+def weekly_panel(
+    panel: pd.DataFrame, rule: str = RULE, drop_partial: bool = True
+) -> pd.DataFrame:
     """Resample the daily panel to week ends.
 
     Levels take the week's last observation; volume takes the week's sum.  Weeks
     with no trading at all (none in this sample) drop out rather than forward
     fill, so a holiday-shortened week is still a real week but an empty one is
     not invented.
+
+    ``drop_partial`` removes a trailing week that has fewer sessions than the
+    sample's modal week.  This matters whenever the panel ends mid-week: a
+    Monday-to-Wednesday stub resamples into a "week" whose return covers three
+    days and whose summed volume covers three days, and both go straight into
+    ``Return`` and ``Volume_Ratio`` as though they were weekly.  Reading a live
+    regime off that stub is how you get a confident answer about a week that has
+    not happened yet.
+
+    The test is session count rather than "does the week contain its Friday",
+    because Good Friday and similar holidays make a *complete* week end on a
+    Thursday.  The cost is that a holiday-shortened final week is also dropped.
+    That is the safe direction: one week of a live reading is lost, and a partial
+    week is never reported as a whole one.
     """
+    counts = panel.resample(rule).size()
     agg = panel.resample(rule).agg(
         {"close": "last", "volume": "sum", "oil_close": "last", "VIX": "last", "DGS10": "last"}
     )
-    return agg.dropna(subset=["close"])
+    agg = agg.dropna(subset=["close"])
+    if drop_partial and len(agg) > 1:
+        counts = counts.reindex(agg.index)
+        modal = int(counts.mode().iloc[0])
+        if int(counts.iloc[-1]) < modal:
+            agg = agg.iloc[:-1]
+    return agg
 
 
 def build_weekly_features(
-    panel: pd.DataFrame, windows: dict[str, int] | None = None, rule: str = RULE
+    panel: pd.DataFrame,
+    windows: dict[str, int] | None = None,
+    rule: str = RULE,
+    drop_partial: bool = True,
 ) -> pd.DataFrame:
     """Weekly feature frame, built from the DAILY panel.
 
@@ -101,7 +127,7 @@ def build_weekly_features(
     happens here; the one mandatory lag lives in ``pipeline.tactical_strategy``.
     """
     w = windows or WINDOWS
-    wk = weekly_panel(panel, rule)
+    wk = weekly_panel(panel, rule, drop_partial=drop_partial)
     out = pd.DataFrame(index=wk.index.copy())
 
     close, volume = wk["close"].astype(float), wk["volume"].astype(float)
